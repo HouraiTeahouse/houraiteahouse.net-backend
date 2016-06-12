@@ -1,7 +1,7 @@
 import json
 from flask import Flask, request, session
 from houraiteahouse.app import app, bcrypt, db
-from .user import User
+from houraiteahouse import models
 from .. import request_util
 
 
@@ -9,7 +9,7 @@ from .. import request_util
 def register():
     json_data = request.data
     print(json_data)
-    user = User(
+    user = models.User(
         email = json_data['email'],
         password = json_data['password'],
         username = json_data['username']
@@ -29,16 +29,16 @@ def register():
 @app.route('/auth/login', methods=['POST'])
 def login():
     json_data = request.data
-    user = User.query.filter_by(username=json_data['username']).first()
+    user = models.User.query.filter_by(username=json_data['username']).first()
     isValidUser = user is not None
     if isValidUser and bcrypt.check_password_hash(user.password, json_data['password']):
         session['logged_in'] = True
-        session['username'] = user.username
+        session['userid'] = user.id
         session['admin'] = user.admin
         # session['authNFailures'] = 0
         return request_util.generate_success_response(json.dumps({'result': True}), 'application/json')
     else:
-        #if isValidUser:
+        #if isValidmodels.User:
         #    if session.get('authNFailures'):
         #        session['authNFailures'] = session.get('authNFailures') + 1
         #    else:
@@ -48,13 +48,13 @@ def login():
         #        return request_util.generate_response(403, 'Login attempts exceeded. We have locked your account, check your email for instructions to unlock your account.')
         # Log nothing if the user does not exist - we can't exactly lock an invalid account
         # TODO: Do we want to limit login attempts for invalid usernames?
-        return request_util.generate_error_response(401, 'Invalid Username or Password')
+        return request_util.generate_error_response(401, 'Invalid models.Username or Password')
 
 
 @app.route('/auth/logout', methods=['POST'])
 def logout():
     session.pop('logged_in', None)
-    session.pop('username', None)
+    session.pop('userid', None)
     return request_util.generate_success_response('Logout Successful', 'plain/text')
 
 
@@ -67,7 +67,7 @@ def status():
 def change_password():
     if session.get('logged_in') and session['logged_in']:
         json_data = request.data
-        user = User.query.filter_by(username=session['username']).first()
+        user = models.User.query.filter_by(username=session['username']).first()
         if bcrypt.check_password_hash(user.password, json_data['oldPassword']):
             try:
                 user.password = bcrypt.generate_password_hash(json_data['newPassword'])

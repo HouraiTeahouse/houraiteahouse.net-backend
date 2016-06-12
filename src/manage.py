@@ -1,7 +1,6 @@
 from flask.ext.script import Manager
 from flask.ext.migrate import Migrate, MigrateCommand
 from houraiteahouse.app import app, db
-from houraiteahouse.authentication.user import User
 
 migrate = Migrate(app, db)
 manager = Manager(app)

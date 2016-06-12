@@ -11,4 +11,5 @@ cors = CORS(app, headers=['Content-Type'])
 bcrypt = Bcrypt(app)
 db = SQLAlchemy(app)
 
+from . import models
 from . import authentication, news

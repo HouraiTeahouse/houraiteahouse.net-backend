@@ -5,9 +5,10 @@ from datetime import datetime
 from time import time
 from sys import exc_info
 from flask import Flask, request
-from . import data
-from .. import request_util
+from houraiteahouse.auth.auth import authorize
 from houraiteahouse.app import app
+from .. import request_util
+from . import data
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,7 @@ def get_news(postId):
         return request_util.generate_error_response(500, 'Error: {}'.format(e))
 
 
+@authorize('news')
 @app.route('/news', methods=['PUT', 'POST'])
 def create_news():
     try:

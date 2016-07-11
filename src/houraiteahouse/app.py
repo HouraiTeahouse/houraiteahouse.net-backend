@@ -1,7 +1,7 @@
-from flask.ext.api import FlaskAPI
-from flask.ext.cors import CORS
-from flask.ext.bcrypt import Bcrypt
-from flask.ext.sqlalchemy import SQLAlchemy
+from flask_api import FlaskAPI
+from flask_cors import CORS
+from flask_bcrypt import Bcrypt
+from flask_sqlalchemy import SQLAlchemy
 from flask import Response
 from .config import BaseConfig
 
@@ -12,4 +12,4 @@ bcrypt = Bcrypt(app)
 db = SQLAlchemy(app)
 
 from . import models
-from . import authentication, news
+from . import auth, news

@@ -2,16 +2,10 @@ import json
 import logging
 import os
 
-from flask import session
 from houraiteahouse.app import app, db
 from houraiteahouse import models
 
 logger = logging.getLogger(__name__)
-
-
-def read_mock_data():
-    with open(os.path.dirname(__file__) + '/mock.json') as data_file:
-        return json.load(data_file)
 
 
 def list_news():
@@ -58,7 +52,7 @@ def post_news(title, body, tags):
         db.session.commit()
         success = True
     except Exception as e:
-        logger.exception('Failed to create news post')
+        logger.exception('Failed to create news post: {0}'.format(e.message))
         success = False
     db.session.close()
     return models.NewsPost.query.filter_by(title=title).first() if success else None
@@ -79,7 +73,7 @@ def create_tag(name):
         db.session.close()
         return models.NewsTag.query.filter_by(name=name).first()
     except Exception as e:
-        logger.exception('Failed to create tag')
+        logger.exception('Failed to create tag: {0}'.format(e.message))
         db.session.close()
         return -1
 

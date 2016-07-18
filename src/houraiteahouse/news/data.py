@@ -19,12 +19,9 @@ def list_news():
 
 
 def tagged_news(tag):
-    print('right function')
     tag = models.NewsTag.query.filter_by(name=tag).first()
-    print('got tag {}'.format(tag))
     if tag is None or tag.news is None:
         return None
-    print('iterating over list')
     newsList = []
     for post in tag.news:
         newsList.append(news_to_dict(post))

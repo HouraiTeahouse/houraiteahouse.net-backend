@@ -1,5 +1,5 @@
+import time
 import uuid
-
 from datetime import datetime, timedelta
 from houraiteahouse.app import bcrypt, db
 from sqlalchemy.orm import backref
@@ -68,15 +68,21 @@ class UserSession(db.Model):
     
     def __init__(self, user, remember_me=False):
         self.user = user
-        self.valid_after = datetime.now() # Prevent time travel
+        self.session_uuid = str(uuid.uuid4())
+        self.valid_after = datetime.utcnow() # Prevent time travel
         if remember_me:
             self.valid_before = None
         else:
-            self.valid_before = datetime.now() + timedelta(days=1)
+            self.valid_before = datetime.utcnow() + timedelta(days=1)
+            
+    def get_expiration(self):
+        return None if self.valid_before is None else int(time.mktime(self.valid_before.timetuple())) * 1000
         
     def is_valid(self):
-        now = datetime.now()
-        return self.valid_after < now and self.valid_before > now
+        now = datetime.utcnow()
+        if self.valid_before is not None and self.valid_before < now:
+            return False
+        return self.valid_after < now
     
     def get_user(self):
         return self.user

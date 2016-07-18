@@ -1,3 +1,4 @@
+import json
 from flask import Response
 
 
@@ -14,4 +15,4 @@ def generate_success_response(responseBody, mimetype):
 
 
 def generate_error_response(status, responseText):
-    return generate_response(status, responseText, 'plain/text')
+    return generate_response(status, json.dumps({'message': responseText}), 'application/json')

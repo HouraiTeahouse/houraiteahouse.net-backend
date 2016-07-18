@@ -9,11 +9,13 @@ logger = logging.getLogger(__name__)
 
 def new_user_session(user, remember_me):
     userSession = models.UserSession(user, remember_me)
+    uuid = userSession.get_uuid()
     # Allow errors to propogate up the stack
     db.session.add(userSession)
     db.session.commit()
+    db.session.expunge(userSession)
     db.session.close()
-    return userSession
+    return get_user_session(uuid)
 
 
 def get_user_session(session_uuid):
@@ -24,7 +26,7 @@ def close_user_session(session_uuid):
     userSession = models.UserSession.query.filter_by(session_uuid=session_uuid).first()
     if userSession is None:
         return
-    userSession.valid_before = datetime.now()
+    userSession.valid_before = datetime.utcnow()
     db.session.merge(userSession)
     db.session.commit()
     db.session.close()

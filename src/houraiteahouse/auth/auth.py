@@ -5,13 +5,21 @@ from . import data
 # Signin/signout calls
 
 def start_user_session(username, password, remember_me):
+    if username is None or password is None:
+        return None
+    if remember_me is None:
+        remember_me = False
     user = data.get_user(username)
+    if user is None:
+        return None
     if authenticate_user(user, password):
         userSession = data.new_user_session(user, remember_me)
         ret = dict()
-        ret['sessionId'] = userSession.get_uuid()
+        ret['session_id'] = userSession.get_uuid()
         ret['permissions'] = userSession.get_user().permissions.__dict__
         ret['permissions'].pop('_sa_instance_state')
+        if not remember_me:
+            ret['expiration'] = userSession.get_expiration()
         return ret
     return None
 
@@ -44,15 +52,26 @@ def authenticate_user(user, password):
 
 def authentication_check(session_id):
     if session_id is None:
-        return False
+        return {'status': False}
     userSession = data.get_user_session(session_id)
-    return userSession is not None and userSession.is_valid()
+    if userSession is None or not userSession.is_valid():
+        return {'status': False}
+    ret = {
+        'status': True,
+        'permissions': userSession.get_user().get_permissions().__dict__,
+        'expiration': userSession.get_expiration()
+    }
+    ret['permissions'].pop('_sa_instance_state')
+    return ret
 
 
 # Decorator to require authentication for functions
 def authenticate(func):
     def authenticate_and_call(*args, **kwargs):
-        if request is None or request.data is None or not 'session_id' in request.data or not authentication_check(request.data['session_id']):
+        flag = request is None or request.data is None or not 'session_id' in request.data
+        if flag:
+            flag = authentication_check(request.data['session_id'])['status']
+        if not flag:
             raise Exception('You must be logged in to perform this action!')
         return func(*args, **kwargs)
     return authenticate_and_call
@@ -63,7 +82,7 @@ def authenticate(func):
 def authorization_check(action_type, session_id):
     if session_id is None or action_type is None:
         return False
-    userSession = get_user_session(session_id)
+    userSession = data.get_user_session(session_id)
     if userSession is None or not userSession.is_valid():
         return False
     permissions = userSession.get_user().permissions

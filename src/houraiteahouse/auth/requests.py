@@ -1,3 +1,4 @@
+import traceback
 import json
 from flask import request
 from houraiteahouse.app import app, bcrypt, db
@@ -17,8 +18,10 @@ def register():
 @app.route('/auth/login', methods=['POST'])
 def login():
     json_data = request.data
+    if not 'remember_me' in json_data:
+        json_data['remember_me'] = False
     try:
-        sessionData = auth.start_user_session(json_data['username'], json_data['password'])
+        sessionData = auth.start_user_session(json_data['username'], json_data['password'], json_data['remember_me'])
         if sessionData is not None:
             return request_util.generate_success_response(json.dumps(sessionData), 'application/json')
         return request_util.generate_error_response(401, 'Invalid username or password')
@@ -37,12 +40,12 @@ def logout():
 
 @app.route('/auth/status', methods=['GET'])
 def status():
-    json_data = request.data
+    json_data = request.args
     if not 'session_id' in json_data:
-        response = False
+        response = {'status': False}
     else:
         response = auth.authentication_check(json_data['session_id'])
-    return request_util.generate_response(200, json.dumps({'status': response}), 'application/json')
+    return request_util.generate_response(200, json.dumps(response), 'application/json')
 
 
 @authenticate

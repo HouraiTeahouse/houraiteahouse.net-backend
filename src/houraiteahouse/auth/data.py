@@ -36,8 +36,38 @@ def get_user(username):
     return models.User.query.filter_by(username=username).first()
     
 
-def get_permissions(userId):
+def get_user_by_id(userId):
     return models.User.query.filter_by(user_id=userId).first()
+
+
+def get_permissions_by_username(username):
+    return models.User.query.filter_by(username=username).first().get_permissions
+
+
+def set_permissions_by_username(username, permissions, session_uuid):
+    if permissionsObj.master:
+        # This cannot be set through calls!
+        return False
+
+    callerPermissions = get_user_session(session_uuid).get_user().get_permissions()
+    
+    if not callerPermissions.master:
+        if not callerPermissions.admin:
+            # If you're not a master or admin you can't touch this.
+            return False
+        if permissions['admin']:
+            # You MUST be a master to promote admins
+            return False
+        
+    permissionsObj = models.User.query.filter_by(username=username).first().get_permissions
+    
+    if not permissionsObj.update_permissions(permissions):
+        return False
+    
+    db.session.merge(permissionsObj)
+    db.session.commit()
+    db.session.close()
+    return True
 
 
 def create_user(email, username, password):

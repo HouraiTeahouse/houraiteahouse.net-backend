@@ -85,16 +85,18 @@ def authorization_check(action_type, session_id):
     userSession = data.get_user_session(session_id)
     if userSession is None or not userSession.is_valid():
         return False
-    permissions = userSession.get_user().permissions
-    return permissions[action_type]
+    permissions = userSession.get_user().permissions.__dict__
+    # 'master' implies server & db access and thus always has permission
+    return permissions['master'] or permissions[action_type]
     
 
 # Decorator to require authorization for functions
 def authorize(action_type):
     def wrapper(func):
         def authorize_and_call(*args, **kwargs):
+            reqdat = request.args if request.data is None else request.data
             # The authenticate decorator has already guaranteed the request data is present
-            if request is None or request.data is None or not 'session_id' in request.data or not authorization_check(action_type, request.data['session_id']):
+            if request is None or reqdat is None or not 'session_id' in reqdat or not authorization_check(action_type, reqdat['session_id']):
                 raise Exception('You do not have permission to perform this action!')
             return func(*args, **kwargs)
         return authorize_and_call

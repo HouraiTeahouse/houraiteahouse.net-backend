@@ -101,9 +101,9 @@ class UserPermissions(db.Model):
     __tablename__ = "permissions"
     
     permissions_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    master = db.Column(db.Boolean, nullable=False, default=False) # Someone with host & DB access. Admins cannot change their permissions. This can only be set manually.
-    admin = db.Column(db.Boolean, nullable=False, default=False) # User administrative rights - can edit people's permissions
-    team = db.Column(db.Boolean, nullable=False, default=False) # User is a member of our team.  They hyave access to our internal tools, but not necessarily every action.
+    master = db.Column(db.Boolean, nullable=False, default=False) # Someone with host & DB access. admins cannot change a master's permissions. This can only be set manually.  Equivalent of "webmaster"
+    admin = db.Column(db.Boolean, nullable=False, default=False) # User administrative rights - can edit people's permissions.  Only masters can set this.  Essential moderator powers/etc.
+    team = db.Column(db.Boolean, nullable=False, default=False) # User is a member of our team.  They have access to our internal tools, but not necessarily every action.
     wiki = db.Column(db.Boolean, nullable=False, default=False) # Permission to edit Wiki pages
     news = db.Column(db.Boolean, nullable=False, default=False) # Permission to post news
     comment = db.Column(db.Boolean, nullable=False, default=True) # Permission to comment on news.  Can be revoked.
@@ -117,6 +117,12 @@ class UserPermissions(db.Model):
         
     def get_id(self):
         return self.permissions_id
+    
+    def update_permissions(self, newPermissions):
+        for permType, value in newPermissions.items():
+            if permType == 'master':
+                raise Exception('Master can only be set manually!')
+            setattr(self, permType, value)
 
 
 # Sec 2: News, tags, comments

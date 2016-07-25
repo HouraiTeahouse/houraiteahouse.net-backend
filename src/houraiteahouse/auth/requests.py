@@ -4,8 +4,7 @@ from flask import request
 from houraiteahouse.app import app, bcrypt, db
 from houraiteahouse import models, request_util
 from . import auth, data
-from .auth import authenticate
-
+from .auth import authenticate, authorize
 
 @app.route('/auth/register', methods=['POST'])
 def register():
@@ -45,7 +44,7 @@ def status():
         response = {'status': False}
     else:
         response = auth.authentication_check(json_data['session_id'])
-    return request_util.generate_response(200, json.dumps(response), 'application/json')
+    return request_util.generate_success_response(json.dumps(response), 'application/json')
 
 
 @authenticate
@@ -59,3 +58,34 @@ def change_password():
             return request_util.generate_error_response(400, 'Current password is incorrect.')
     except:
         return request_util.generate_error_response(500, 'Failed to update password.  Please try again later.')
+
+# Can only be used by True Administrators
+
+@authorize('admin')
+@app.route('/auth/permissions/<username>', methods=['GET'])
+def get_user_permissions(username):
+    try:
+        permissions = data.get_permissions_by_username(username)
+        if permissions is None:
+            return request_util.generate_error_response(400, 'User not found!')
+        permissions = permissions.__dict__
+        permissions.pop('_sa_instance_state')
+        ret = dict()
+        ret['username'] = username
+        ret['permissions'] = permissions
+        return request_util.generate_success_response(ret, 'application/json')
+    except:
+        return request_util.generate_error_response(500, 'Failed to load user permissions.  Please check the server logs')
+
+@authorize('admin')
+@app.route('/auth/permissions/<username>', methods=['POST','PUT'])
+def set_user_permissions(username):
+    json_data = request.data
+    try:
+        success = data.set_permissions_by_username(username, json_data['permissions'], json_data['session_id'])
+        if success:
+            return request_util.generate_success_response('Permissions updated.', 'plain/text')
+        else:
+            return request_util.generate_error_response(400, 'You are missing permissions or trying to override permissions you are not permitted.', 'plain/text')
+    except:
+        return request_util.generate_error_response(500, 'Failed update user permissions.  Please check the server logs.', 'plain/text')

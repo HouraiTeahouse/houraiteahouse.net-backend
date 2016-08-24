@@ -53,10 +53,24 @@ def get_news(postId):
 @app.route('/news', methods=['PUT', 'POST'])
 def create_news():
     try:
-        news = data.post_news(request.data['title'], request.data['body'], request.data['tags'])
+        media = None if not 'media' in request.data else request.data['media']
+        news = data.post_news(request.data['title'], request.data['body'], request.data['tags'], request.data['session_id'], media)
         if news is None:
             return request_util.generate_error_response(500, 'Failed to create news post')
-        return request_util.generate_success_response(json.dumps({'id': news.id}), 'application/json')
+        return request_util.generate_success_response(json.dumps({'post_id': news.post_id}), 'application/json')
     except Exception as e:
         logger.exception('Failed to create news!')
         return request_util.generate_error_response(500, 'Error: {}'.format(e))
+
+@authorize('comment')
+@app.route('/comment/<postId>', methods=['PUT', 'POST'])
+def create_comment(postId):
+    try:
+        comment = data.post_comment(postId, request.data['body'], request.data['session_id'])
+        if comment is None:
+            return request_util.generate_error_response(400, 'Unknown news post')
+        return request_util.generate_success_response(json.dumps(comment), 'application/json')
+    except Exception as e:
+        logger.exception('Failed to create comment!')
+        return request_util.generate_error_response(500, 'Error: {}'.format(e))
+    

@@ -133,6 +133,7 @@ class NewsPost(db.Model):
     
     post_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     title = db.Column(db.String(120), nullable=False, unique=True)
+    media = db.Column(db.String(1024)) # If someone tries to post a media URL > 1024 chars I will end them
     body = db.Column(db.String(65535), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
     created = db.Column(db.DateTime, nullable=False)
@@ -142,12 +143,13 @@ class NewsPost(db.Model):
         backref=db.backref('newspost'))
     tags = db.relationship('NewsTag', secondary=tags, back_populates="news")
     
-    def __init__(self, title, body, author, tags):
+    def __init__(self, title, body, author, tags, media=None):
         self.title = title
         self.body = body
         self.created = datetime.now()
         self.author = author
         self.tags = tags
+        self.media = media
     
     def get_id(self):
         return self.post_id
@@ -194,3 +196,6 @@ class NewsComment(db.Model):
 
     def get_id(self):
         return self.comment_id
+
+    def get_author_name(self):
+        return self.author.username

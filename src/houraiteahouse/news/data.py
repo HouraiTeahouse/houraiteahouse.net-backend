@@ -4,6 +4,7 @@ import os
 
 from houraiteahouse.app import app, db
 from houraiteahouse import models
+from email._header_value_parser import Comment
 
 logger = logging.getLogger(__name__)
 
@@ -29,21 +30,23 @@ def tagged_news(tag):
 
 
 def get_news(postId):
-    news = models.NewsPost.query.filter_by(id=postId).first()
+    news = models.NewsPost.query.filter_by(post_id=postId).first()
     if news is None:
         return None
     return news_to_dict(news)
 
 
-def post_news(title, body, tags):
-    author = models.User.query.filter_by(username='LordAlfredo').first()
+def post_news(title, body, tags, session_id, media=None):
     tagObjs = []
     for tagName in tags:
         tag = get_tag(tagName)
         if tag == None:
             return False
         tagObjs.append(tag)
-    news = models.NewsPost(title, body, author, tagObjs)
+
+    author = models.UserSession.query.filter_by(session_uuid=session_id).first().get_user()
+    
+    news = models.NewsPost(title, body, author, tagObjs, media)
     try:
         db.session.add(news)
         db.session.commit()
@@ -73,6 +76,26 @@ def create_tag(name):
         logger.exception('Failed to create tag: {0}'.format(e.message))
         db.session.close()
         return -1
+    
+
+def post_comment(postId, body, session_id):
+    news = models.NewsPost.query.filter_by(post_id=postId).first()
+    if news is None:
+        return None
+    
+    author = models.UserSession.query.filter_by(session_uuid=session_id).first().get_user()
+    ret = {'body': body, 'author': author.username}
+    
+    comment = models.NewsComment(body, author, news)
+    try:
+        db.session.add(comment)
+        db.session.commit()
+        db.session.close()
+        return ret
+    except Exception as e:
+        logger.exception('Failed to create comment: {0}'.format(e.message))
+        db.session.close()
+        raise e
 
 
 def news_to_dict(news):
@@ -81,8 +104,17 @@ def news_to_dict(news):
     newsDict['created'] = str(news.created)
     newsDict['title'] = news.title
     newsDict['body'] = news.body
-    newsDict['id'] = news.id
+    newsDict['post_id'] = news.post_id
     newsDict['tags'] = []
+    if news.media is not None:
+        newsDict['media'] = news.media
+
     for tag in news.tags:
         newsDict['tags'].append(tag.name)
+        
+    if news.comments:
+        newsDict['comments'] = []
+        for comment in news.comments:
+            newsDict['comments'].append({'author':comment.get_author_name(),'body':comment.body})
+
     return newsDict

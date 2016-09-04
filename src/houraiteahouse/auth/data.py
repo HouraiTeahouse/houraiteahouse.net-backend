@@ -41,14 +41,16 @@ def get_user_by_id(userId):
 
 
 def get_permissions_by_username(username):
-    return models.User.query.filter_by(username=username).first().get_permissions
+    permissions = models.User.query.filter_by(username=username).first().get_permissions()
+    if permissions is not None:
+        permissions = permissions.__dict__
+        permissions.pop('_sa_instance_state')
+        permissions.pop('permissions_id')
+    
+    return permissions
 
 
 def set_permissions_by_username(username, permissions, session_uuid):
-    if permissionsObj.master:
-        # This cannot be set through calls!
-        return False
-
     callerPermissions = get_user_session(session_uuid).get_user().get_permissions()
     
     if not callerPermissions.master:
@@ -58,10 +60,18 @@ def set_permissions_by_username(username, permissions, session_uuid):
         if permissions['admin']:
             # You MUST be a master to promote admins
             return False
-        
-    permissionsObj = models.User.query.filter_by(username=username).first().get_permissions
+            
+    permissionsObj = models.User.query.filter_by(username=username).first().get_permissions()
     
-    if not permissionsObj.update_permissions(permissions):
+    print(permissions)
+
+    if permissionsObj.master:
+        # This user's permissions cannot be set through calls!
+        return False
+
+    try:
+        permissionsObj.update_permissions(permissions)
+    except:
         return False
     
     db.session.merge(permissionsObj)

@@ -44,6 +44,12 @@ def status():
         response = {'status': False}
     else:
         response = auth.authentication_check(json_data['session_id'])
+        if 'permissions' in response:
+            permissions = response['permissions']
+            # Obscure/hide permissions the user doesn't have
+            for permission in permissions:
+                if not permissions[permission]:
+                    permissions.pop(permission)
     return request_util.generate_success_response(json.dumps(response), 'application/json')
 
 
@@ -68,12 +74,10 @@ def get_user_permissions(username):
         permissions = data.get_permissions_by_username(username)
         if permissions is None:
             return request_util.generate_error_response(400, 'User not found!')
-        permissions = permissions.__dict__
-        permissions.pop('_sa_instance_state')
         ret = dict()
         ret['username'] = username
         ret['permissions'] = permissions
-        return request_util.generate_success_response(ret, 'application/json')
+        return request_util.generate_success_response(json.dumps(ret), 'application/json')
     except:
         return request_util.generate_error_response(500, 'Failed to load user permissions.  Please check the server logs')
 
@@ -86,6 +90,6 @@ def set_user_permissions(username):
         if success:
             return request_util.generate_success_response('Permissions updated.', 'plain/text')
         else:
-            return request_util.generate_error_response(400, 'You are missing permissions or trying to override permissions you are not permitted.', 'plain/text')
+            return request_util.generate_error_response(400, 'You do not have permission to set this user\'s permission.')
     except:
-        return request_util.generate_error_response(500, 'Failed update user permissions.  Please check the server logs.', 'plain/text')
+        return request_util.generate_error_response(500, 'Failed update user permissions.  Please check the server logs.')

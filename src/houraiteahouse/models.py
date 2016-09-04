@@ -53,7 +53,7 @@ class User(db.Model):
         return self.permissions
     
     def __repr__(self):
-        return '<User {0}>'.format(self.email)
+        return '<User {0}>'.format(self.username)
     
 # Session tracking
 class UserSession(db.Model):
@@ -120,9 +120,10 @@ class UserPermissions(db.Model):
     
     def update_permissions(self, newPermissions):
         for permType, value in newPermissions.items():
-            if permType == 'master':
-                raise Exception('Master can only be set manually!')
-            setattr(self, permType, value)
+            if getattr(self, permType) != value:
+                if permType == 'master':
+                    raise Exception('Master can only be set manually!')
+                setattr(self, permType, value)
 
 
 # Sec 2: News, tags, comments

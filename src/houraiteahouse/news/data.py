@@ -18,7 +18,6 @@ def list_news():
         newsList.append(news_to_dict(post))
     return newsList
 
-
 def tagged_news(tag):
     tag = models.NewsTag.query.filter_by(name=tag).first()
     if tag is None or tag.news is None:
@@ -41,10 +40,14 @@ def post_news(title, body, tags, session_id, media=None):
     for tagName in tags:
         tag = get_tag(tagName)
         if tag == None:
-            return False
+            return None
         tagObjs.append(tag)
 
     author = models.UserSession.query.filter_by(session_uuid=session_id).first().get_user()
+    if author is None:
+        return None
+    
+    body = body.replace('\n', '<br />') # replace linebreaks with HTML breaks
     
     news = models.NewsPost(title, body, author, tagObjs, media)
     try:
@@ -84,8 +87,12 @@ def post_comment(postId, body, session_id):
         return None
     
     author = models.UserSession.query.filter_by(session_uuid=session_id).first().get_user()
+    if author is None:
+        return None
     ret = {'body': body, 'author': author.username}
     
+    body = body.replace('\n', '<br />') # replace linebreaks with HTML breaks
+
     comment = models.NewsComment(body, author, news)
     try:
         db.session.add(comment)

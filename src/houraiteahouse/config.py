@@ -6,6 +6,13 @@ class BaseConfig(object):
     BCRYPT_LOG_ROUNDS = 13
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Fake for the sake of git commit.  This should be set manually on the host.
-    SECRET_KEY = 'secretkey'
-    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://houraiteahouse:H0r41T34Hou$3@127.0.0.1/houraiteahouse?unix_socket=/run/mysqld/mysqld.sock'
+    f = open('/var/htwebsite/secretkey', 'r')
+    SECRET_KEY = f.readline()[:-1]
+    f.close()
+
+    f = open('/var/htwebsite/mysqlcreds', 'r') # This file must exist
+    username = f.readline()[:-1]
+    password = f.readline()[:-1]
+    database = f.readline()[:-1]
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://{0}:{1}@127.0.0.1/{2}?unix_socket=/run/mysqld/mysqld.sock'.format(username, password, database)
+    f.close()

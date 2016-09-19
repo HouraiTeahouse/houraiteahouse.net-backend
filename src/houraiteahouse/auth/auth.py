@@ -1,5 +1,7 @@
 from flask import request, session
 from houraiteahouse.app import app, bcrypt, db
+from functools import wraps
+from .. import request_util
 from . import data
 
 # Signin/signout calls
@@ -65,14 +67,15 @@ def authentication_check(session_id):
     return ret
 
 
-# Decorator to require authentication for functions
+# Decorator to require authentication for requests
 def authenticate(func):
+    @wraps(func)
     def authenticate_and_call(*args, **kwargs):
         flag = request is None or request.data is None or not 'session_id' in request.data
         if flag:
             flag = authentication_check(request.data['session_id'])['status']
         if not flag:
-            raise Exception('You must be logged in to perform this action!')
+            return request_util.generate_error_response(403, 'You must be logged in to perform this action!')
         return func(*args, **kwargs)
     return authenticate_and_call
 
@@ -90,14 +93,15 @@ def authorization_check(action_type, session_id):
     return permissions['master'] or permissions[action_type]
     
 
-# Decorator to require authorization for functions
+# Decorator to require authorization for requests
 def authorize(action_type):
     def wrapper(func):
+        @wraps(func)
         def authorize_and_call(*args, **kwargs):
             reqdat = request.args if request.data is None else request.data
             # The authenticate decorator has already guaranteed the request data is present
             if request is None or reqdat is None or not 'session_id' in reqdat or not authorization_check(action_type, reqdat['session_id']):
-                raise Exception('You do not have permission to perform this action!')
+                return request_util.generate_error_response(403, 'You must be logged in to perform this action!')
             return func(*args, **kwargs)
         return authorize_and_call
     return wrapper

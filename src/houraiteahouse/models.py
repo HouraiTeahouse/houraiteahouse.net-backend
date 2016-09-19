@@ -52,6 +52,9 @@ class User(db.Model):
     def get_permissions(self):
         return self.permissions
     
+    def get_username(self):
+        return self.username
+    
     def __repr__(self):
         return '<User {0}>'.format(self.username)
     
@@ -155,6 +158,9 @@ class NewsPost(db.Model):
     def get_id(self):
         return self.post_id
     
+    def get_author(self):
+        return self.author
+    
     def __repr__(self):
         return '<NewsPost {0}>'.format(self.title)
 
@@ -197,6 +203,6 @@ class NewsComment(db.Model):
 
     def get_id(self):
         return self.comment_id
-
-    def get_author_name(self):
-        return self.author.username
+    
+    def get_author(self):
+        return self.author

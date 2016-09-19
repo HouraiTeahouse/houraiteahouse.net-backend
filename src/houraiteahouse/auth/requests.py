@@ -28,8 +28,8 @@ def login():
         return request_util.generate_error_response(500, 'Login has failed due to an internal error, please try again.')
 
 
-@authenticate
 @app.route('/auth/logout', methods=['POST'])
+@authenticate
 def logout():
     json_data = request.data
     # Decorator has already confirmed login
@@ -46,15 +46,18 @@ def status():
         response = auth.authentication_check(json_data['session_id'])
         if 'permissions' in response:
             permissions = response['permissions']
+            permissions.pop('permissions_id')
             # Obscure/hide permissions the user doesn't have
+            filteredPerms = {}
             for permission in permissions:
-                if not permissions[permission]:
-                    permissions.pop(permission)
+                if permissions[permission]:
+                    filteredPerms[permission] = True
+            response['permissions'] = filteredPerms
     return request_util.generate_success_response(json.dumps(response), 'application/json')
 
 
-@authenticate
 @app.route('/auth/update', methods=['POST'])
+@authenticate
 def change_password():
     json_data = request.data
     try:
@@ -67,8 +70,8 @@ def change_password():
 
 # Can only be used by True Administrators
 
-@authorize('admin')
 @app.route('/auth/permissions/<username>', methods=['GET'])
+@authorize('admin')
 def get_user_permissions(username):
     try:
         permissions = data.get_permissions_by_username(username)
@@ -81,8 +84,8 @@ def get_user_permissions(username):
     except:
         return request_util.generate_error_response(500, 'Failed to load user permissions.  Please check the server logs')
 
-@authorize('admin')
 @app.route('/auth/permissions/<username>', methods=['POST','PUT'])
+@authorize('admin')
 def set_user_permissions(username):
     json_data = request.data
     try:

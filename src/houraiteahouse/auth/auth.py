@@ -72,7 +72,7 @@ def authenticate(func):
     @wraps(func)
     def authenticate_and_call(*args, **kwargs):
         flag = request is None or request.data is None or not 'session_id' in request.data
-        if flag:
+        if not flag:
             flag = authentication_check(request.data['session_id'])['status']
         if not flag:
             return request_util.generate_error_response(403, 'You must be logged in to perform this action!')

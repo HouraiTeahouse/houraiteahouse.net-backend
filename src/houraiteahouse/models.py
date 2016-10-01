@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime, timedelta
 from houraiteahouse.app import bcrypt, db
 from sqlalchemy.orm import backref
+import code
 
 # Database model class definitions
 
@@ -35,7 +36,7 @@ class User(db.Model):
         self.username = username
         self.password = bcrypt.generate_password_hash(password)
         self.permissions = permissions
-        self.registered_on = datetime.now()
+        self.registered_on = datetime.utcnow()
         
     def change_password(self, password):
         self.password = bcrypt.generate_password_hash(password)
@@ -108,7 +109,8 @@ class UserPermissions(db.Model):
     admin = db.Column(db.Boolean, nullable=False, default=False) # User administrative rights - can edit people's permissions.  Only masters can set this.  Essential moderator powers/etc.
     team = db.Column(db.Boolean, nullable=False, default=False) # User is a member of our team.  They have access to our internal tools, but not necessarily every action.
     wiki = db.Column(db.Boolean, nullable=False, default=False) # Permission to edit Wiki pages
-    news = db.Column(db.Boolean, nullable=False, default=False) # Permission to post news
+    news = db.Column(db.Boolean, nullable=False, default=False) # Permission to post news (specifical new posts
+    translate = db.Column(db.Boolean, nullable=False, default=False) # Permission to translate existing content.  Does not allow new posting, etc
     comment = db.Column(db.Boolean, nullable=False, default=True) # Permission to comment on news.  Can be revoked.
 
     def __init(self, admin=False, team=False, wiki=False, news=False, comment=True):
@@ -136,9 +138,8 @@ class NewsPost(db.Model):
     __tablename__ = "news"
     
     post_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    title = db.Column(db.String(120), nullable=False, unique=True)
+    post_short = db.Column(db.String(64), nullable=False, unique=True)
     media = db.Column(db.String(1024)) # If someone tries to post a media URL > 1024 chars I will end them
-    body = db.Column(db.String(65535), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
     created = db.Column(db.DateTime, nullable=False)
     author = db.relationship('User',
@@ -146,11 +147,12 @@ class NewsPost(db.Model):
     comments = db.relationship('NewsComment',
         backref=db.backref('newspost'))
     tags = db.relationship('NewsTag', secondary=tags, back_populates="news")
+    lastEdit = db.Column(db.DateTime, nullable=True)
     
-    def __init__(self, title, body, author, tags, media=None):
+    def __init__(self, short, title, created, author, tags, media=None):
+        self.post_short = short
         self.title = title
-        self.body = body
-        self.created = datetime.now()
+        self.created = created
         self.author = author
         self.tags = tags
         self.media = media
@@ -158,12 +160,58 @@ class NewsPost(db.Model):
     def get_id(self):
         return self.post_id
     
+    def get_short(self):
+        return self.post_short
+    
     def get_author(self):
         return self.author
     
     def __repr__(self):
         return '<NewsPost {0}>'.format(self.title)
 
+
+# Language codes
+class Language(db.Model):
+    __tablename__ = "languages"
+    
+    language_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    language_code = db.Column(db.String(3), nullable=False)
+    language_name = db.Column(db.String(50))
+    
+    def __init__(self, code, name):
+        self.language_code = code
+        self.language_name = name
+        
+    def get_id(self):
+        return self.language_id
+        
+    def get_language_code(self):
+        return self.language_code
+    
+    def get_language_name(self):
+        return self.language_name
+
+
+# Localized news titles. Many-to-one.
+class NewsTitle(db.Model):
+    __tablename__ = "newstitle"
+    
+    news_id = db.Column(db.Integer, db.ForeignKey('news.post_id'), nullable=False, primary_key=True)
+    news = db.relationship('NewsPost',
+        backref=db.backref('newstitle', lazy='dynamic'))
+    language_id = db.Column(db.Integer, db.ForeignKey('languages.language_id'), nullable=False, primary_key=True)
+    language = db.relationship('Language',
+        backref=db.backref('newstitle', lazy='dynamic'))
+    localized_title = db.Column(db.String(1000))
+    
+    def __init__(self, news, language, title):
+        self.news = news
+        self.language = language
+        self.localized_title = title
+        
+    def get_title(self):
+        return self.localized_title
+    
 
 # Tags for news. Many-to-many.
 class NewsTag(db.Model):
@@ -188,7 +236,7 @@ class NewsComment(db.Model):
     __tablename__ = "newscomment"
     
     comment_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    body = db.Column(db.String(65535), nullable=False)
+    body = db.Column(db.String(10000), nullable=False) # Don't ask about the exact #. It's a mysql bug.
     author_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
     author = db.relationship('User',
         backref=db.backref('newscomment', lazy='dynamic'))

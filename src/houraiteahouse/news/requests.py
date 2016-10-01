@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 @app.route('/news/list', methods=['GET'])
 def list_news():
     try:
-        news = data.list_news()
+        news = data.list_news(request.args['language'])
         if news is None:
             return request_util.generate_error_response(404, 'No news found!')
         return request_util.generate_success_response(json.dumps(news), 'application/json')
@@ -43,7 +43,7 @@ def get_news(postId):
     if 'session_id' in request.args:
         callerSess = request.args['session_id']
     try:
-        news = data.get_news(postId, callerSess)
+        news = data.get_news(postId, callerSess, request.args['language'])
         if news is None:
             return request_util.generate_error_response(404, 'Not found!')
         return request_util.generate_success_response(json.dumps(news), 'application/json')
@@ -107,6 +107,7 @@ def edit_comment(commentId):
     except Exception as e:
         logger.exception('Failed to edit comment: {}'.format(e))
         return request_util.generate_error_response(500, 'Error: {}'.format(e))
+    
     
 @app.route('/news/comment/delete/<commentId>', methods=['PUT', 'POST'])
 @authorize('comment')

@@ -6,6 +6,8 @@ from houraiteahouse import models, request_util
 from . import auth, data
 from .auth import authenticate, authorize
 
+# TODO: refactor to remove some code duplication (ie, stub out common request logic)
+
 @app.route('/auth/register', methods=['POST'])
 def register():
     json_data = request.data

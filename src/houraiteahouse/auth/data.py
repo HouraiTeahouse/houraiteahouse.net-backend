@@ -6,6 +6,7 @@ from houraiteahouse import models
 
 logger = logging.getLogger(__name__)
 
+# TODO: Refactor to remove code duplication, add caching
 
 def new_user_session(user, remember_me):
     userSession = models.UserSession(user, remember_me)
@@ -62,8 +63,6 @@ def set_permissions_by_username(username, permissions, session_uuid):
             return False
             
     permissionsObj = models.User.query.filter_by(username=username).first().get_permissions()
-    
-    print(permissions)
 
     if permissionsObj.master:
         # This user's permissions cannot be set through calls!

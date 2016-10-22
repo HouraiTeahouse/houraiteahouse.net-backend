@@ -9,6 +9,9 @@ from email._header_value_parser import Comment
 logger = logging.getLogger(__name__)
 
 
+# TODO: Major refactor to remove a lot of code duplication and cache read calls
+
+
 def list_news(language='en'):
     news = models.NewsPost.query.order_by(models.NewsPost.created.desc()).all()
     if news is None or news == []:
@@ -80,7 +83,7 @@ def post_news(title, body, tags, session_id, media=None, language='en'):
 
 
 def edit_news(post_id, title, body, session_id, media, language='en'):
-    news = models.NewsPost.query.filter_by(post_id=post_id).first()
+    news = models.NewsPost.query.filter_by(post_short=post_id).first()
     if news is None:
         return None
     
@@ -88,7 +91,7 @@ def edit_news(post_id, title, body, session_id, media, language='en'):
     if caller != news.get_author():
         raise PermissionError
 
-    body = body.replace('\n', '<br />')
+    body = body.replace('\n', '<br />') # replace linebreaks with HTML breaks
     
     file = open('/var/htwebsite/news/' + language + '/' + news.post_short, 'w')
     file.write(body);
@@ -108,6 +111,37 @@ def edit_news(post_id, title, body, session_id, media, language='en'):
         return ret
     except Exception as e:
         logger.exception('Failed to edit comment: {0}'.format(e))
+        db.session.close()
+        raise e
+    
+
+def translate_news(post_id, language, title, body):
+    news = models.NewsPost.query.filter_by(post_short=post_id).first()
+    if news is None:
+        return None
+    lang = models.Language.query.filter_by(language_code=language).first()
+    if(lang is None):
+        return None
+    
+    body = body.replace('\n', '<br />') # replace linebreaks with HTML breaks
+
+    file = open('/var/htwebsite/news/' + language + '/' + news.post_short, 'w')
+    file.write(body);
+    file.close()
+    
+    ret = False
+    title = models.NewsTitle.query.filter_by(news=news,language=lang).first()
+    if(title is None):
+        title = models.NewsTitle(news, lang, title)
+        ret = True
+    
+    try:
+        db.session.add(title)
+        db.session.commit()
+        db.session.close()
+        return ret
+    except Exception as e:
+        logger.exception('Failed to post translation: {0}'.format(e))
         db.session.close()
         raise e
 

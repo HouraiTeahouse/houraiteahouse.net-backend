@@ -5,6 +5,7 @@ from .. import request_util
 from . import data
 
 # Signin/signout calls
+# TODO: Session caching for active sessions
 
 def start_user_session(username, password, remember_me):
     if username is None or password is None:
@@ -73,8 +74,8 @@ def authenticate(func):
     def authenticate_and_call(*args, **kwargs):
         flag = request is None or request.data is None or not 'session_id' in request.data
         if not flag:
-            flag = authentication_check(request.data['session_id'])['status']
-        if not flag:
+            flag = not authentication_check(request.data['session_id'])['status']
+        if flag:
             return request_util.generate_error_response(403, 'You must be logged in to perform this action!')
         return func(*args, **kwargs)
     return authenticate_and_call
@@ -97,10 +98,11 @@ def authorization_check(action_type, session_id):
 def authorize(action_type):
     def wrapper(func):
         @wraps(func)
+        @authenticate
         def authorize_and_call(*args, **kwargs):
             reqdat = request.args if request.data is None else request.data
             # The authenticate decorator has already guaranteed the request data is present
-            if request is None or reqdat is None or not 'session_id' in reqdat or not authorization_check(action_type, reqdat['session_id']):
+            if not authorization_check(action_type, reqdat['session_id']):
                 return request_util.generate_error_response(403, 'You must be logged in to perform this action!')
             return func(*args, **kwargs)
         return authorize_and_call

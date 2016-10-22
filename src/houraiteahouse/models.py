@@ -16,6 +16,28 @@ tags = db.Table('tags',
 )
 
 
+# Language codes
+class Language(db.Model):
+    __tablename__ = "languages"
+    
+    language_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    language_code = db.Column(db.String(3), nullable=False)
+    language_name = db.Column(db.String(50))
+    
+    def __init__(self, code, name):
+        self.language_code = code
+        self.language_name = name
+        
+    def get_id(self):
+        return self.language_id
+        
+    def get_language_code(self):
+        return self.language_code
+    
+    def get_language_name(self):
+        return self.language_name
+
+
 # Sec 1: User AuthN & AuthZ        
 
 # User authN & metadata
@@ -168,28 +190,6 @@ class NewsPost(db.Model):
     
     def __repr__(self):
         return '<NewsPost {0}>'.format(self.title)
-
-
-# Language codes
-class Language(db.Model):
-    __tablename__ = "languages"
-    
-    language_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    language_code = db.Column(db.String(3), nullable=False)
-    language_name = db.Column(db.String(50))
-    
-    def __init__(self, code, name):
-        self.language_code = code
-        self.language_name = name
-        
-    def get_id(self):
-        return self.language_id
-        
-    def get_language_code(self):
-        return self.language_code
-    
-    def get_language_name(self):
-        return self.language_name
 
 
 # Localized news titles. Many-to-one.

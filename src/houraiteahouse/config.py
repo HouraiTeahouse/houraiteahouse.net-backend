@@ -6,11 +6,13 @@ class BaseConfig(object):
     BCRYPT_LOG_ROUNDS = 13
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # Read secret key to use on requests
     f = open('/var/htwebsite/secretkey', 'r')
     SECRET_KEY = f.readline()[:-1]
     f.close()
-
-    f = open('/var/htwebsite/mysqlcreds', 'r') # This file must exist
+    
+    # Read database creds & configure connections
+    f = open('/var/htwebsite/mysqlcreds', 'r')
     username = f.readline()[:-1]
     password = f.readline()[:-1]
     database = f.readline()[:-1]

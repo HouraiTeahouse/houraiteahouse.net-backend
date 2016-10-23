@@ -1,3 +1,5 @@
+[![Discord](https://discordapp.com/api/guilds/151219753434742784/widget.png)](https://discord.gg/VuZhs9V)
+
 This is the backend package for the Hourai Teahouse website.  Thus far it was written with a "get pieces working" mindset rather than a proper design/plan and thus it requires significant cleanup & improvement.
 
 The stack is built on the Flask Python framework.  To run the backend, you will need a Virtual Environment with the following packages installed:

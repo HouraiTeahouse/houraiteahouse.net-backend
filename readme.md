@@ -1,4 +1,5 @@
 [![Discord](https://discordapp.com/api/guilds/151219753434742784/widget.png)](https://discord.gg/VuZhs9V)
+[![Build Status](https://travis-ci.org/HouraiTeahouse/houraiteahouse.net-backend.svg?branch=master)](https://travis-ci.org/HouraiTeahouse/houraiteahouse.net-backend)
 
 # Hourai Teahouse Website Backend
 

@@ -1,17 +1,16 @@
 [![Discord](https://discordapp.com/api/guilds/151219753434742784/widget.png)](https://discord.gg/VuZhs9V)
 
+# Hourai Teahouse Website Backend
+
 This is the backend package for the Hourai Teahouse website.  Thus far it was written with a "get pieces working" mindset rather than a proper design/plan and thus it requires significant cleanup & improvement.
 
-The stack is built on the Flask Python framework.  To run the backend, you will need a Virtual Environment with the following packages installed:
-* flask
-* flask_api
-* flask_cors
-* flask_bcrypt
-* flask_sqlalchemy
-* pymysql (if you update the database config, replace as appropriate)
-For database setup (see manage.py), you will also want the following:
-* flask_script
-* flask_migrate
+## Setup
+
+0. Install python 3.5.3 or newer.
+0. Optionally use virtualenv to set up a virtual enviroment for the project.
+0. Use ``pip install -r requirements.txt`` to install the relevant dependencies.
+
+### Setting up the database
 
 To set up the database, follow standard SQLAlchemy setup procedures.  Use PYTHONPATH src/houraiteahouse:
 * Setup/configure mysql (or whatever you're using instead).  You can optionally use manage.py db create_db and other options to simplify this process.

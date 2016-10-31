@@ -1,9 +1,13 @@
 import time
 import uuid
 from datetime import datetime, timedelta
-from houraiteahouse.app import bcrypt, db
+from flask_bcrypt import Bcrypt
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import backref
 import code
+
+bcrypt = Bcrypt()
+db = SQLAlchemy()
 
 # Database model class definitions
 

@@ -1,7 +1,8 @@
 import os
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
-from houraiteahouse.app import app, db
+from houraiteahouse.app import app
+from houraiteahouse.models import db
 
 # Flask migrate scripting for SQLAlchemy
 

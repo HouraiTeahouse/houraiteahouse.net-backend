@@ -4,7 +4,6 @@ import os
 from datetime import datetime
 from houraiteahouse.app import app, db
 from houraiteahouse import models
-from email._header_value_parser import Comment
 
 logger = logging.getLogger(__name__)
 

@@ -5,7 +5,9 @@ python:
 install: pip install -r requirements.txt 
 script: python -m unittest discover -v -s test
 notifications:
-  webhooks: https://discordapp.com/api/webhooks/242910675729383424/rmTqNg0mxXbEBcjJiUbOrTX3Ar58azGUryaL0vjApUtQuAWXSpuerogDr9fflmeO5UEw
+  webhooks: 
+    urls:
+      - https://discordapp.com/api/webhooks/242910675729383424/rmTqNg0mxXbEBcjJiUbOrTX3Ar58azGUryaL0vjApUtQuAWXSpuerogDr9fflmeO5UEw
     on_success: change
     on_failure: always
     on_start: never

@@ -16,7 +16,8 @@ manager.add_command('db', MigrateCommand)
 def create_db():
     if not os.path.exists('/var/htwebsite'):
         os.makdirs('/var/htwebsite')
-        print('Make sure to set up the /var/htwebsite secretkey and mysqlcreds files!')
+        print('Make sure to set up the /var/htwebsite '
+              'secretkey and mysqlcreds files!')
     if not os.path.exists('/var/htwebsite/news'):
         os.makdirs('/var/htwebsite/news')
         # Spin up some quick language dirs

@@ -11,6 +11,7 @@ manager = Manager(app)
 
 manager.add_command('db', MigrateCommand)
 
+
 @manager.command
 def create_db():
     if not os.path.exists('/var/htwebsite'):
@@ -19,19 +20,23 @@ def create_db():
     if not os.path.exists('/var/htwebsite/news'):
         os.makdirs('/var/htwebsite/news')
         # Spin up some quick language dirs
-        os.makedirs('/var/htwebsite/news/en') # English
-        os.makedirs('/var/htwebsite/news/ja') # Japanese
+        os.makedirs('/var/htwebsite/news/en')  # English
+        os.makedirs('/var/htwebsite/news/ja')  # Japanese
     db.create_all()
+
 
 @manager.command
 def drop_db():
     db.drop_all()
-    
+
+
 @manager.command
 def create_admin():
-    # Temporary for initialization - as part of this, connect to the DB & create a real admin
+    # Temporary for initialization - as part of this, connect to the DB &
+    # create a real admin
     db.session.add(User(email='ad@min', password='admin', admin=True))
     db.session.commit()
+
 
 @manager.command
 def create_data():

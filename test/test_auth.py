@@ -1,6 +1,8 @@
 import unittest
 
 # TODO(LordAlfredo): Fill in tests
+
+
 class AuthTest(unittest.TestCase):
 
     def setUp(self):

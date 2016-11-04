@@ -25,21 +25,22 @@ def register():
 @app.route('/auth/login', methods=['POST'])
 def login():
     json_data = request.data
-    if not 'remember_me' in json_data:
+    if 'remember_me' not in json_data:
         json_data['remember_me'] = False
     try:
         sessionData = auth.start_user_session(
             json_data['username'],
             json_data['password'],
             json_data['remember_me'])
-        if sessionData is not None:
+        if sessionData:
             return request_util.generate_success_response(
                 json.dumps(sessionData), 'application/json')
         return request_util.generate_error_response(
             401, 'Invalid username or password')
     except:
         return request_util.generate_error_response(
-            500, 'Login has failed due to an internal error, please try again.')
+            500, 'Login has failed due to an internal error, '
+            'please try again.')
 
 
 @app.route('/auth/logout', methods=['POST'])
@@ -55,7 +56,7 @@ def logout():
 @app.route('/auth/status', methods=['GET'])
 def status():
     json_data = request.args
-    if not 'session_id' in json_data:
+    if 'session_id' not in json_data:
         response = {'status': False}
     else:
         response = auth.authentication_check(json_data['session_id'])
@@ -88,7 +89,8 @@ def change_password():
                 400, 'Current password is incorrect.')
     except:
         return request_util.generate_error_response(
-            500, 'Failed to update password.  Please try again later.')
+            500, 'Failed to update password.  " \
+                    "Please try again later.')
 
 # Can only be used by True Administrators
 
@@ -99,7 +101,8 @@ def get_user_permissions(username):
     try:
         permissions = data.get_permissions_by_username(username)
         if permissions is None:
-            return request_util.generate_error_response(400, 'User not found!')
+            return request_util.generate_error_response(400,
+                                                        'User not found!')
         ret = dict()
         ret['username'] = username
         ret['permissions'] = permissions
@@ -107,7 +110,8 @@ def get_user_permissions(username):
             json.dumps(ret), 'application/json')
     except:
         return request_util.generate_error_response(
-            500, 'Failed to load user permissions.  Please check the server logs')
+            500, 'Failed to load user permissions." \
+            " Please check the server logs')
 
 
 @app.route('/auth/permissions/<username>', methods=['POST', 'PUT'])
@@ -122,7 +126,9 @@ def set_user_permissions(username):
                 'Permissions updated.', 'plain/text')
         else:
             return request_util.generate_error_response(
-                400, 'You do not have permission to set this user\'s permission.')
+                400, 'You do not have permission to set this '
+                'user\'s permission.')
     except:
         return request_util.generate_error_response(
-            500, 'Failed update user permissions.  Please check the server logs.')
+            500, 'Failed update user permissions.  '
+            'Please check the server logs.')

@@ -59,7 +59,7 @@ def authentication_check(session_id):
     if session_id is None:
         return {'status': False}
     userSession = data.get_user_session(session_id)
-    if userSession is None or not userSession.is_valid():
+    if userSession and userSession.is_valid():
         return {'status': False}
     ret = {
         'status': True,
@@ -74,11 +74,11 @@ def authentication_check(session_id):
 def authenticate(func):
     @wraps(func)
     def authenticate_and_call(*args, **kwargs):
-        flag = request is None or request.data is None or not 'session_id' in request.data
+        flag = request and request.data and 'session_id' in request.data
         if not flag:
             flag = not authentication_check(
                 request.data['session_id'])['status']
-        if flag:
+        else:
             return request_util.generate_error_response(
                 403, 'You must be logged in to perform this action!')
         return func(*args, **kwargs)

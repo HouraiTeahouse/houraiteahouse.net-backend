@@ -64,7 +64,7 @@ def get_news(postId):
 @authorize('news')
 def create_news():
     try:
-        media = None if not 'media' in request.data else request.data['media']
+        media = None if 'media' not in request.data else request.data['media']
         news = data.post_news(
             request.data['title'],
             request.data['body'],
@@ -86,7 +86,7 @@ def create_news():
 @authorize('news')
 def edit_news(postId):
     try:
-        media = None if not 'media' in request.data else request.data['media']
+        media = None if 'media' not in request.data else request.data['media']
         news = data.edit_news(
             postId,
             request.data['title'],
@@ -117,7 +117,9 @@ def translate_news(postId):
             return request_util.generate_error_response(
                 404, 'Cannot submit translation: post not found')
         return request_util.generate_success_response(
-            'Translation successfully ' + ('created' if isNew else 'updated'), 'plain/text')
+            'Translation successfully ' +
+            ('created' if isNew else 'updated'),
+            'plain/text')
     except Exception as e:
         logger.exception('Failed to post translation: {0}'.format(e))
         return request_util.generate_error_response(

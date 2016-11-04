@@ -31,7 +31,8 @@ def tagged_news(tag):
     return newsList
 
 
-# "postId" is a misnomer, it's actually the short title (ie, [date]-shortened-title)
+# "postId" is a misnomer, it's actually the short title
+# (ie, [date]-shortened-title)
 def get_news(postId, session_id, language='en'):
     news = models.NewsPost.query.filter_by(post_short=postId).first()
     if news is None:
@@ -265,8 +266,11 @@ def news_to_dict(news, caller, language='en'):
     if news.comments:
         newsDict['comments'] = []
         for comment in news.comments:
-            newsDict['comments'].append({'id': comment.comment_id, 'author': comment.get_author().get_username(
-            ), 'body': comment.body, 'isAuthor': caller is not None and caller == comment.get_author()})
+            newsDict['comments'].append({
+                'id': comment.comment_id,
+                'author': comment.get_author() .get_username(),
+                'body': comment.body,
+                'isAuthor': caller and caller == comment.get_author()})
 
     if news.lastEdit:
         newsDict['lastEdit'] = str(news.lastEdit)

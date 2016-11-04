@@ -7,7 +7,12 @@ install:
   # install testing tools
   - pip install coverage
   - pip install coveralls
-script: coverage run -m unittest discover -v -s test
+  - pip install pep8 
+script: 
+  # PEP8 Style Checks
+  - pep8 --show-source src/ test/
+  # Run tests and collect coverage information
+  - coverage run -m unittest discover -v -s test
 after_success:
   coveralls
 notifications:

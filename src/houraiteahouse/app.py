@@ -11,5 +11,5 @@ cors = CORS(app, headers=['Content-Type'])
 bcrypt = Bcrypt(app)
 db = SQLAlchemy(app)
 
-from . import models
-from . import auth, news
+from . import models        # noqa
+from . import auth, news    # noqa

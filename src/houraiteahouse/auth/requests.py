@@ -6,28 +6,41 @@ from houraiteahouse import models, request_util
 from . import auth, data
 from .auth import authenticate, authorize
 
-# TODO: refactor to remove some code duplication (ie, stub out common request logic)
+# TODO: refactor to remove some code duplication (ie, stub out common
+# request logic)
+
 
 @app.route('/auth/register', methods=['POST'])
 def register():
     json_data = request.data
-    if data.create_user(json_data['email'], json_data['username'], json_data['password']):
+    if data.create_user(
+            json_data['email'],
+            json_data['username'],
+            json_data['password']):
         return request_util.generate_success_response('success', 'plain/text')
-    return request_util.generate_error_response(400, 'A user with this name or email already exists.')
+    return request_util.generate_error_response(
+        400, 'A user with this name or email already exists.')
 
 
 @app.route('/auth/login', methods=['POST'])
 def login():
     json_data = request.data
-    if not 'remember_me' in json_data:
+    if 'remember_me' not in json_data:
         json_data['remember_me'] = False
     try:
-        sessionData = auth.start_user_session(json_data['username'], json_data['password'], json_data['remember_me'])
-        if sessionData is not None:
-            return request_util.generate_success_response(json.dumps(sessionData), 'application/json')
-        return request_util.generate_error_response(401, 'Invalid username or password')
+        sessionData = auth.start_user_session(
+            json_data['username'],
+            json_data['password'],
+            json_data['remember_me'])
+        if sessionData:
+            return request_util.generate_success_response(
+                json.dumps(sessionData), 'application/json')
+        return request_util.generate_error_response(
+            401, 'Invalid username or password')
     except:
-        return request_util.generate_error_response(500, 'Login has failed due to an internal error, please try again.')
+        return request_util.generate_error_response(
+            500, 'Login has failed due to an internal error, '
+            'please try again.')
 
 
 @app.route('/auth/logout', methods=['POST'])
@@ -36,13 +49,14 @@ def logout():
     json_data = request.data
     # Decorator has already confirmed login
     auth.close_user_session(json_data['session_id'])
-    return request_util.generate_success_response('Logout Successful', 'plain/text')
+    return request_util.generate_success_response(
+        'Logout Successful', 'plain/text')
 
 
 @app.route('/auth/status', methods=['GET'])
 def status():
     json_data = request.args
-    if not 'session_id' in json_data:
+    if 'session_id' not in json_data:
         response = {'status': False}
     else:
         response = auth.authentication_check(json_data['session_id'])
@@ -55,7 +69,8 @@ def status():
                 if permissions[permission]:
                     filteredPerms[permission] = True
             response['permissions'] = filteredPerms
-    return request_util.generate_success_response(json.dumps(response), 'application/json')
+    return request_util.generate_success_response(
+        json.dumps(response), 'application/json')
 
 
 @app.route('/auth/update', methods=['POST'])
@@ -63,14 +78,22 @@ def status():
 def change_password():
     json_data = request.data
     try:
-        if auth.change_password(json_data['username'], json_data['oldPassword'], json_data['newPassword']):
-            return request_util.generate_success_response('Update successful', 'plain/text')
+        if auth.change_password(
+                json_data['username'],
+                json_data['oldPassword'],
+                json_data['newPassword']):
+            return request_util.generate_success_response(
+                'Update successful', 'plain/text')
         else:
-            return request_util.generate_error_response(400, 'Current password is incorrect.')
+            return request_util.generate_error_response(
+                400, 'Current password is incorrect.')
     except:
-        return request_util.generate_error_response(500, 'Failed to update password.  Please try again later.')
+        return request_util.generate_error_response(
+            500, 'Failed to update password.  " \
+                    "Please try again later.')
 
 # Can only be used by True Administrators
+
 
 @app.route('/auth/permissions/<username>', methods=['GET'])
 @authorize('admin')
@@ -78,23 +101,34 @@ def get_user_permissions(username):
     try:
         permissions = data.get_permissions_by_username(username)
         if permissions is None:
-            return request_util.generate_error_response(400, 'User not found!')
+            return request_util.generate_error_response(400,
+                                                        'User not found!')
         ret = dict()
         ret['username'] = username
         ret['permissions'] = permissions
-        return request_util.generate_success_response(json.dumps(ret), 'application/json')
+        return request_util.generate_success_response(
+            json.dumps(ret), 'application/json')
     except:
-        return request_util.generate_error_response(500, 'Failed to load user permissions.  Please check the server logs')
+        return request_util.generate_error_response(
+            500, 'Failed to load user permissions." \
+            " Please check the server logs')
 
-@app.route('/auth/permissions/<username>', methods=['POST','PUT'])
+
+@app.route('/auth/permissions/<username>', methods=['POST', 'PUT'])
 @authorize('admin')
 def set_user_permissions(username):
     json_data = request.data
     try:
-        success = data.set_permissions_by_username(username, json_data['permissions'], json_data['session_id'])
+        success = data.set_permissions_by_username(
+            username, json_data['permissions'], json_data['session_id'])
         if success:
-            return request_util.generate_success_response('Permissions updated.', 'plain/text')
+            return request_util.generate_success_response(
+                'Permissions updated.', 'plain/text')
         else:
-            return request_util.generate_error_response(400, 'You do not have permission to set this user\'s permission.')
+            return request_util.generate_error_response(
+                400, 'You do not have permission to set this '
+                'user\'s permission.')
     except:
-        return request_util.generate_error_response(500, 'Failed update user permissions.  Please check the server logs.')
+        return request_util.generate_error_response(
+            500, 'Failed update user permissions.  '
+            'Please check the server logs.')

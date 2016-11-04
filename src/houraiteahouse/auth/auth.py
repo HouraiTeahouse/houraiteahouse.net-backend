@@ -7,6 +7,7 @@ from . import data
 # Signin/signout calls
 # TODO: Session caching for active sessions
 
+
 def start_user_session(username, password, remember_me):
     if username is None or password is None:
         return None
@@ -45,19 +46,20 @@ def change_password(username, old_password, new_password):
     if data.update_password(user, new_password):
         return True
     raise Exception('Failed to update password.  Please try again later.')
-    
-    
+
+
 # Primary authN logic
 
 def authenticate_user(user, password):
-    return user is not None and password is not None and user.check_password(password)
+    return user is not None and password is not None and user.check_password(
+        password)
 
 
 def authentication_check(session_id):
     if session_id is None:
         return {'status': False}
     userSession = data.get_user_session(session_id)
-    if userSession is None or not userSession.is_valid():
+    if userSession and userSession.is_valid():
         return {'status': False}
     ret = {
         'status': True,
@@ -72,11 +74,13 @@ def authentication_check(session_id):
 def authenticate(func):
     @wraps(func)
     def authenticate_and_call(*args, **kwargs):
-        flag = request is None or request.data is None or not 'session_id' in request.data
+        flag = request and request.data and 'session_id' in request.data
         if not flag:
-            flag = not authentication_check(request.data['session_id'])['status']
-        if flag:
-            return request_util.generate_error_response(403, 'You must be logged in to perform this action!')
+            flag = not authentication_check(
+                request.data['session_id'])['status']
+        else:
+            return request_util.generate_error_response(
+                403, 'You must be logged in to perform this action!')
         return func(*args, **kwargs)
     return authenticate_and_call
 
@@ -92,7 +96,7 @@ def authorization_check(action_type, session_id):
     permissions = userSession.get_user().permissions.__dict__
     # 'master' implies server & db access and thus always has permission
     return permissions['master'] or permissions[action_type]
-    
+
 
 # Decorator to require authorization for requests
 def authorize(action_type):
@@ -101,9 +105,11 @@ def authorize(action_type):
         @authenticate
         def authorize_and_call(*args, **kwargs):
             reqdat = request.args if request.data is None else request.data
-            # The authenticate decorator has already guaranteed the request data is present
+            # The authenticate decorator has already guaranteed the request
+            # data is present
             if not authorization_check(action_type, reqdat['session_id']):
-                return request_util.generate_error_response(403, 'You must be logged in to perform this action!')
+                return request_util.generate_error_response(
+                    403, 'You must be logged in to perform this action!')
             return func(*args, **kwargs)
         return authorize_and_call
     return wrapper

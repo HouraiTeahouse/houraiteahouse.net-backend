@@ -21,13 +21,13 @@ def list_news(language='en'):
     return newsList
 
 
-def tagged_news(tag):
+def tagged_news(tag, language='en'):
     tag = models.NewsTag.query.filter_by(name=tag).first()
     if tag is None or tag.news is None:
         return None
     newsList = []
     for post in tag.news:
-        newsList.append(news_to_dict(post, None))
+        newsList.append(news_to_dict(post, None, language))
     return newsList
 
 
@@ -233,6 +233,7 @@ def delete_comment(comment_id, session_id):
         db.session.delete(comment)
         db.session.commit()
         db.session.close()
+        return True
     except Exception as e:
         logger.exception('Failed to delete comment: {0}'.format(e))
         db.session.close()

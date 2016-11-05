@@ -1,4 +1,4 @@
-from flask import request, session
+from flask import request
 from functools import wraps
 from houraiteahouse.app import app, bcrypt, db
 from houraiteahouse.route import request_util
@@ -11,18 +11,14 @@ from houraiteahouse.storage import auth_storage
 
 def start_user_session(username, password, remember_me):
     if username is None or password is None:
-        print('No username')
         return None
     if remember_me is None:
         remember_me = False
     user = auth_storage.get_user(username)
     if user is None:
-        print('User does not exist')
         return None
     if authenticate_user(user, password):
-        print('Authenticated')
         userSession = auth_storage.new_user_session(user, remember_me)
-        print('Got user session')
         ret = dict()
         ret['session_id'] = userSession.get_uuid()
         ret['permissions'] = userSession.get_user().permissions.__dict__
@@ -30,7 +26,6 @@ def start_user_session(username, password, remember_me):
         if not remember_me:
             ret['expiration'] = userSession.get_expiration()
         return ret
-    print('Not authenticated')
     return None
 
 
@@ -108,7 +103,7 @@ def authorization_check(action_type, session_id):
 
 # Decorator to require authorization for requests
 def authorize(action_type):
-    def wrapper(func):
+    def authz_wrapper(func):
         @wraps(func)
         @authenticate
         def authorize_and_call(*args, **kwargs):
@@ -120,4 +115,4 @@ def authorize(action_type):
                     403, 'You must be logged in to perform this action!')
             return func(*args, **kwargs)
         return authorize_and_call
-    return wrapper
+    return authz_wrapper

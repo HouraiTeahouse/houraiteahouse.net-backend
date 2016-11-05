@@ -15,14 +15,11 @@ logger = logging.getLogger(__name__)
 def new_user_session(user, remember_me):
     userSession = models.UserSession(user, remember_me)
     session = Session.object_session(userSession)
-    print('Data: created session')
     uuid = userSession.get_uuid()
     try:
         session.add(userSession)
         session.commit()
-        print('Data: committed session')
     except Exception as e:
-        print(e)
         raise e
     finally:
         session.close()
@@ -109,7 +106,8 @@ def create_user(email, username, password):
         db.session.commit()
         success = True
     except Exception as e:
-        logger.error('Failed to create user {0} with email {1} due to DB error'.format(username, email), e)
+        logger.error('Failed to create user {0} with email {1} due to DB error'.format(
+            username, email), e)
         success = False
     db.session.close()
     return success
@@ -122,7 +120,8 @@ def update_password(user, password):
         db.session.commit()
         success = True
     except Exception as e:
-        logger.error('Failed to update password for user {0} due to DB error'.format(user), e)
+        logger.error(
+            'Failed to update password for user {0} due to DB error'.format(user), e)
         success = False
     db.session.close()
     return success

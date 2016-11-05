@@ -3,7 +3,7 @@ import logging
 import os
 from datetime import datetime
 from houraiteahouse.app import app, db
-from houraiteahouse import models
+from . import models
 
 logger = logging.getLogger(__name__)
 

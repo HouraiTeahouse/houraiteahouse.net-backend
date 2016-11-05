@@ -1,16 +1,14 @@
 import json
 import logging
 
-from datetime import datetime
-from time import time
-from sys import exc_info
 from flask import Flask, request
-from houraiteahouse.auth.auth import authorize
 from houraiteahouse.app import app
-from .. import request_util
-from . import data
+from houraiteahouse.bl.auth_bl import authorize
+from houraiteahouse.storage import news_storage
+from . import request_util
 
 logger = logging.getLogger(__name__)
+
 
 # TODO: refactor to remove code duplication
 
@@ -18,7 +16,7 @@ logger = logging.getLogger(__name__)
 @app.route('/news/list', methods=['GET'])
 def list_news():
     try:
-        news = data.list_news(request.args['language'])
+        news = news_storage.list_news(request.args['language'])
         if news is None:
             return request_util.generate_error_response(404, 'No news found!')
         return request_util.generate_success_response(
@@ -32,7 +30,7 @@ def list_news():
 @app.route('/news/tag/get/<tagName>', methods=['GET'])
 def get_tag(tagName):
     try:
-        news = data.tagged_news(tagName)
+        news = news_storage.tagged_news(tagName)
         if news is None:
             return request_util.generate_error_response(404, 'No news found!')
         return request_util.generate_success_response(
@@ -49,7 +47,7 @@ def get_news(postId):
     if 'session_id' in request.args:
         callerSess = request.args['session_id']
     try:
-        news = data.get_news(postId, callerSess, request.args['language'])
+        news = news_storage.get_news(postId, callerSess, request.args['language'])
         if news is None:
             return request_util.generate_error_response(404, 'Not found!')
         return request_util.generate_success_response(
@@ -65,7 +63,7 @@ def get_news(postId):
 def create_news():
     try:
         media = None if 'media' not in request.data else request.data['media']
-        news = data.post_news(
+        news = news_storage.post_news(
             request.data['title'],
             request.data['body'],
             request.data['tags'],
@@ -87,7 +85,7 @@ def create_news():
 def edit_news(postId):
     try:
         media = None if 'media' not in request.data else request.data['media']
-        news = data.edit_news(
+        news = news_storage.edit_news(
             postId,
             request.data['title'],
             request.data['body'],
@@ -108,7 +106,7 @@ def edit_news(postId):
 @authorize('translate')
 def translate_news(postId):
     try:
-        isNew = data.translate_news(
+        isNew = news_storage.translate_news(
             postId,
             request.data['language'],
             request.data['title'],
@@ -130,7 +128,7 @@ def translate_news(postId):
 @authorize('comment')
 def create_comment(postId):
     try:
-        comment = data.post_comment(
+        comment = news_storage.post_comment(
             postId,
             request.data['body'],
             request.data['session_id'])
@@ -149,7 +147,7 @@ def create_comment(postId):
 @authorize('comment')
 def edit_comment(commentId):
     try:
-        comment = data.edit_comment(
+        comment = news_storage.edit_comment(
             commentId,
             request.data['body'],
             request.data['session_id'])
@@ -171,7 +169,7 @@ def edit_comment(commentId):
 @authorize('comment')
 def delete_comment(commentId):
     try:
-        if not data.delete_comment(commentId, request.data['session_id']):
+        if not news_storage.delete_comment(commentId, request.data['session_id']):
             return request_util.generate_error_response(404, 'Unknown comment')
         return request_util.generate_success_response(
             'Comment deleted', 'plain/text')

@@ -18,7 +18,7 @@ class BaseConfig(object):
     password = f.readline()[:-1]
     database = f.readline()[:-1]
     SQLALCHEMY_DATABASE_URI = \
-        'mysql+pymysql://{0}:{1}@127.0.0.1/{2}?charset=utf8&'
-    'unix_socket=/run/mysqld/mysqld.sock'.format(
-        username, password, database)
+        'mysql+pymysql://{0}:{1}@127.0.0.1/{2}?charset=utf8&' \
+        'unix_socket=/run/mysqld/mysqld.sock'.format(
+            username, password, database)
     f.close()

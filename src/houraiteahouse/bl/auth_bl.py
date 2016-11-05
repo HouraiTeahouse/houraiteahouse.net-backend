@@ -1,8 +1,9 @@
 from flask import request, session
-from houraiteahouse.app import app, bcrypt, db
 from functools import wraps
-from .. import request_util
-from . import data
+from houraiteahouse.app import app, bcrypt, db
+from houraiteahouse.route import request_util
+from houraiteahouse.storage import auth_storage
+
 
 # Signin/signout calls
 # TODO: Session caching for active sessions
@@ -10,14 +11,18 @@ from . import data
 
 def start_user_session(username, password, remember_me):
     if username is None or password is None:
+        print('No username')
         return None
     if remember_me is None:
         remember_me = False
-    user = data.get_user(username)
+    user = auth_storage.get_user(username)
     if user is None:
+        print('User does not exist')
         return None
     if authenticate_user(user, password):
-        userSession = data.new_user_session(user, remember_me)
+        print('Authenticated')
+        userSession = auth_storage.new_user_session(user, remember_me)
+        print('Got user session')
         ret = dict()
         ret['session_id'] = userSession.get_uuid()
         ret['permissions'] = userSession.get_user().permissions.__dict__
@@ -25,25 +30,26 @@ def start_user_session(username, password, remember_me):
         if not remember_me:
             ret['expiration'] = userSession.get_expiration()
         return ret
+    print('Not authenticated')
     return None
 
 
 def get_user_for_session(session_id):
-    userSession = data.get_user_session(session_id)
+    userSession = auth_storage.get_user_session(session_id)
     if userSession is None or not userSession.is_valid():
         raise Exception('User is not logged in!')
     return userSession.get_user()
 
 
 def close_user_session(session_id):
-    data.close_user_session(session_id)
+    auth_storage.close_user_session(session_id)
 
 
 def change_password(username, old_password, new_password):
-    user = data.get_user(username)
+    user = auth_storage.get_user(username)
     if not authenticate_user(user, old_password):
         return False
-    if data.update_password(user, new_password):
+    if auth_storage.update_password(user, new_password):
         return True
     raise Exception('Failed to update password.  Please try again later.')
 
@@ -58,8 +64,8 @@ def authenticate_user(user, password):
 def authentication_check(session_id):
     if session_id is None:
         return {'status': False}
-    userSession = data.get_user_session(session_id)
-    if userSession and userSession.is_valid():
+    userSession = auth_storage.get_user_session(session_id)
+    if not(userSession and userSession.is_valid()):
         return {'status': False}
     ret = {
         'status': True,
@@ -74,11 +80,13 @@ def authentication_check(session_id):
 def authenticate(func):
     @wraps(func)
     def authenticate_and_call(*args, **kwargs):
-        flag = request and request.data and 'session_id' in request.data
-        if not flag:
-            flag = not authentication_check(
+        flag = False
+        can_auth = request and request.data and 'session_id' in request.data
+        if can_auth:
+            flag = authentication_check(
                 request.data['session_id'])['status']
-        else:
+
+        if not flag:
             return request_util.generate_error_response(
                 403, 'You must be logged in to perform this action!')
         return func(*args, **kwargs)
@@ -90,7 +98,7 @@ def authenticate(func):
 def authorization_check(action_type, session_id):
     if session_id is None or action_type is None:
         return False
-    userSession = data.get_user_session(session_id)
+    userSession = auth_storage.get_user_session(session_id)
     if userSession is None or not userSession.is_valid():
         return False
     permissions = userSession.get_user().permissions.__dict__

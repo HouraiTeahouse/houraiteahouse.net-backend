@@ -2,21 +2,30 @@ import logging
 
 from datetime import datetime
 from houraiteahouse.app import app, db
-from houraiteahouse import models
+from sqlalchemy import inspect
+from sqlalchemy.orm.session import Session
+from . import models
 
 logger = logging.getLogger(__name__)
+
 
 # TODO: Refactor to remove code duplication, add caching
 
 
 def new_user_session(user, remember_me):
     userSession = models.UserSession(user, remember_me)
+    session = Session.object_session(userSession)
+    print('Data: created session')
     uuid = userSession.get_uuid()
-    # Allow errors to propogate up the stack
-    db.session.add(userSession)
-    db.session.commit()
-    db.session.expunge(userSession)
-    db.session.close()
+    try:
+        session.add(userSession)
+        session.commit()
+        print('Data: committed session')
+    except Exception as e:
+        print(e)
+        raise e
+    finally:
+        session.close()
     return get_user_session(uuid)
 
 
@@ -100,6 +109,7 @@ def create_user(email, username, password):
         db.session.commit()
         success = True
     except Exception as e:
+        logger.error('Failed to create user {0} with email {1} due to DB error'.format(username, email), e)
         success = False
     db.session.close()
     return success
@@ -112,6 +122,7 @@ def update_password(user, password):
         db.session.commit()
         success = True
     except Exception as e:
+        logger.error('Failed to update password for user {0} due to DB error'.format(user), e)
         success = False
     db.session.close()
     return success

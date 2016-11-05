@@ -1,19 +1,20 @@
-import traceback
-import json
+import json, logging
 from flask import request
-from houraiteahouse.app import app, bcrypt, db
-from houraiteahouse import models, request_util
-from . import auth, data
-from .auth import authenticate, authorize
+from ..app import app, bcrypt, db
+from ..bl import auth_bl
+from ..bl.auth_bl import authenticate, authorize
+from ..storage import auth_storage, models
+from . import request_util
 
 # TODO: refactor to remove some code duplication (ie, stub out common
 # request logic)
 
+logger = logging.getLogger(__name__)
 
 @app.route('/auth/register', methods=['POST'])
 def register():
     json_data = request.data
-    if data.create_user(
+    if auth_storage.create_user(
             json_data['email'],
             json_data['username'],
             json_data['password']):
@@ -28,7 +29,7 @@ def login():
     if 'remember_me' not in json_data:
         json_data['remember_me'] = False
     try:
-        sessionData = auth.start_user_session(
+        sessionData = auth_bl.start_user_session(
             json_data['username'],
             json_data['password'],
             json_data['remember_me'])
@@ -48,7 +49,7 @@ def login():
 def logout():
     json_data = request.data
     # Decorator has already confirmed login
-    auth.close_user_session(json_data['session_id'])
+    auth_bl.close_user_session(json_data['session_id'])
     return request_util.generate_success_response(
         'Logout Successful', 'plain/text')
 
@@ -59,7 +60,7 @@ def status():
     if 'session_id' not in json_data:
         response = {'status': False}
     else:
-        response = auth.authentication_check(json_data['session_id'])
+        response = auth_bl.authentication_check(json_data['session_id'])
         if 'permissions' in response:
             permissions = response['permissions']
             permissions.pop('permissions_id')
@@ -78,7 +79,7 @@ def status():
 def change_password():
     json_data = request.data
     try:
-        if auth.change_password(
+        if auth_bl.change_password(
                 json_data['username'],
                 json_data['oldPassword'],
                 json_data['newPassword']):
@@ -92,14 +93,14 @@ def change_password():
             500, 'Failed to update password.  " \
                     "Please try again later.')
 
-# Can only be used by True Administrators
 
+# Can only be used by True Administrators
 
 @app.route('/auth/permissions/<username>', methods=['GET'])
 @authorize('admin')
 def get_user_permissions(username):
     try:
-        permissions = data.get_permissions_by_username(username)
+        permissions = auth_storage.get_permissions_by_username(username)
         if permissions is None:
             return request_util.generate_error_response(400,
                                                         'User not found!')
@@ -119,7 +120,7 @@ def get_user_permissions(username):
 def set_user_permissions(username):
     json_data = request.data
     try:
-        success = data.set_permissions_by_username(
+        success = auth_storage.set_permissions_by_username(
             username, json_data['permissions'], json_data['session_id'])
         if success:
             return request_util.generate_success_response(

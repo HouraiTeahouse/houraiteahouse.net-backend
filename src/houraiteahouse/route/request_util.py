@@ -42,21 +42,19 @@ def handle_request_errors(internalAction, externalAction=None):
 
             except Exception as e:
                 logger.warn(
-                    '{0} failed: request wrapper caught an error in {1}'.format(
-                        internalAction,
-                        func.__name__
-                    ),
+                    '{0} failed: request wrapper caught an error in {1}'
+                    .format(internalAction, func.__name__),
                     e
                 )
-                
+
                 action = externalAction if externalAction else internalAction
 
                 return generate_error_response(
                     500,
-                    '{0} has failed due to an internal error, ' \
-                        'please try again later.  ' \
-                        'If this error persists, please contact us.'
-                        .format(action)
+                    '{0} has failed due to an internal error, '
+                    'please try again later.  '
+                    'If this error persists, please contact us.'
+                    .format(action)
                 )
 
         return wrap_request
@@ -77,7 +75,8 @@ def require_language(field, internalAction, externalAction=None):
                 flag = False
 
             if flag:
-                message = 'Language should be specified when {0} but was not provided'
+                message = 'Language should be specified when {0} ' \
+                    'but was not provided'
                 logger.debug(message.format(internalAction))
                 action = externalAction if externalAction else internalAction
                 return generate_error_response(

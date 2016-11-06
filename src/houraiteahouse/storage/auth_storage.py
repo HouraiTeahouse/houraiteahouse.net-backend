@@ -106,8 +106,9 @@ def create_user(email, username, password):
         db.session.commit()
         success = True
     except Exception as e:
-        logger.error('Failed to create user {0} with email {1} due to DB error'.format(
-            username, email), e)
+        logger.error('Failed to create user {0} with email {1} due to DB error'
+                     .format(username, email),
+                     e)
         success = False
     db.session.close()
     return success
@@ -121,7 +122,9 @@ def update_password(user, password):
         success = True
     except Exception as e:
         logger.error(
-            'Failed to update password for user {0} due to DB error'.format(user), e)
+            'Failed to update password for user {0} due to DB error'
+            .format(user),
+            e)
         success = False
     db.session.close()
     return success

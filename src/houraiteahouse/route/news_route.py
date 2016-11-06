@@ -32,8 +32,11 @@ def list_news():
 
 @app.route('/news/tag/get/<tag_name>', methods=['GET'])
 def get_tag_wrapper(tag_name):
-    @require_language('args', 'fetching news tagged with \'{0}\''.format(tag_name))
-    @handle_request_errors('Fetching news tagged with \'{0}\''.format(tag_name))
+    @require_language('args',
+                      'fetching news tagged with \'{0}\''
+                      .format(tag_name))
+    @handle_request_errors('Fetching news tagged with \'{0}\''
+                           .format(tag_name))
     def get_tag(tag_name):
         news = news_storage.tagged_news(
             tag_name,
@@ -56,8 +59,10 @@ def get_tag_wrapper(tag_name):
 
 @app.route('/news/get/<post_id>', methods=['GET'])
 def get_news_wrapper(post_id):
-    @require_language('args', 'fetching news post {0}'.format(post_id))
-    @handle_request_errors('Fetching news post {0}'.format(post_id), 'Fetching full news post')
+    @require_language('args', 'fetching news post {0}'
+                      .format(post_id))
+    @handle_request_errors('Fetching news post {0}'
+                           .format(post_id), 'Fetching full news post')
     def get_news(post_id):
         callerSess = None
         if 'session_id' in request.args:
@@ -113,7 +118,9 @@ def create_news():
 @app.route('/news/edit/<post_id>', methods=['PUT', 'POST'])
 @authorize('news')
 def edit_news_wrapper(post_id):
-    @handle_request_errors('Editing news post \'{0}\'', format(post_id), 'Posting edit')
+    @handle_request_errors('Editing news post \'{0}\''
+                           .format(post_id),
+                           'Posting edit')
     def edit_news(post_id):
         media = None if 'media' not in request.data else request.data['media']
 
@@ -143,7 +150,9 @@ def edit_news_wrapper(post_id):
 @authorize('translate')
 def translate_news_wrapper(post_id):
     @require_language('data', 'translating post \'{0}\''.format(post_id))
-    @handle_request_errors('Posting translation of \'{0\''.format(post_id), 'Posting translation')
+    @handle_request_errors('Posting translation of \'{0\''
+                           .format(post_id),
+                           'Posting translation')
     def translate_news(post_id):
         isNew = news_storage.translate_news(
             post_id,
@@ -170,7 +179,9 @@ def translate_news_wrapper(post_id):
 @app.route('/news/comment/post/<post_id>', methods=['PUT', 'POST'])
 @authorize('comment')
 def create_comment_wrapper(post_id):
-    @handle_request_errors('Posting comment on \'{0}\''.format(post_id), 'Posting comment')
+    @handle_request_errors('Posting comment on \'{0}\''
+                           .format(post_id),
+                           'Posting comment')
     def create_comment(post_id):
         comment = news_storage.post_comment(
             post_id,
@@ -195,7 +206,9 @@ def create_comment_wrapper(post_id):
 @app.route('/news/comment/edit/<comment_id>', methods=['PUT', 'POST'])
 @authorize('comment')
 def edit_comment_wrapper(comment_id):
-    @handle_request_errors('Editing comment \'{0}\''.format(comment_id), 'Editing comment')
+    @handle_request_errors('Editing comment \'{0}\''
+                           .format(comment_id),
+                           'Editing comment')
     def edit_comment(comment_id):
         try:
             comment = news_storage.edit_comment(
@@ -229,7 +242,9 @@ def edit_comment_wrapper(comment_id):
 @app.route('/news/comment/delete/<comment_id>', methods=['PUT', 'POST'])
 @authorize('comment')
 def delete_comment_wrapper(comment_id):
-    @handle_request_errors('Deleting comment \'{0}\''.format(comment_id), 'Deleting comment')
+    @handle_request_errors('Deleting comment \'{0}\''
+                           .format(comment_id),
+                           'Deleting comment')
     def delete_comment(comment_id):
         try:
             success = news_storage.delete_comment(
@@ -253,5 +268,5 @@ def delete_comment_wrapper(comment_id):
                 403,
                 'You do not have permission to delete this comment.'
             )
-            
+
     return delete_comment(comment_id)

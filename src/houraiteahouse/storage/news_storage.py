@@ -2,7 +2,8 @@ import json
 import logging
 import os
 from datetime import datetime
-from houraiteahouse.app import app, db
+from flask_sqlalchemy_cache import FromCache
+from houraiteahouse.app import app, cache, db
 from . import models
 
 logger = logging.getLogger(__name__)
@@ -12,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 def list_news(language='en'):
-    news = models.NewsPost.query.order_by(models.NewsPost.created.desc()).all()
+    news = models.NewsPost.query.order_by(models.NewsPost.created.desc()) \
+            .options(FromCache(cache)).all()
     if news is None or news == []:
         return None
     newsList = []
@@ -22,7 +24,8 @@ def list_news(language='en'):
 
 
 def tagged_news(tag, language='en'):
-    tag = models.NewsTag.query.filter_by(name=tag).first()
+    tag = models.NewsTag.query.filter_by(name=tag) \
+            .options(FromCache(cache)).first()
     if tag is None or tag.news is None:
         return None
     newsList = []
@@ -34,14 +37,16 @@ def tagged_news(tag, language='en'):
 # "postId" is a misnomer, it's actually the short title
 # (ie, [date]-shortened-title)
 def get_news(postId, session_id, language='en'):
-    news = models.NewsPost.query.filter_by(post_short=postId).first()
+    news = models.NewsPost.query.filter_by(post_short=postId) \
+            .options(FromCache(cache)).first()
     if news is None:
         return None
 
     caller = None
     if session_id is not None:
         caller = models.UserSession.query.filter_by(
-            session_uuid=session_id).first().get_user()
+            session_uuid=session_id).options(FromCache(cache)).first() \
+            .get_user()
 
     ret = news_to_dict(news, caller, language)
 
@@ -60,7 +65,8 @@ def post_news(title, body, tags, session_id, media=None, language='en'):
         tagObjs.append(tag)
 
     author = models.UserSession.query.filter_by(
-        session_uuid=session_id).first().get_user()
+        session_uuid=session_id).options(FromCache(cache)).first() \
+        .get_user()
     if author is None:
         return None
 
@@ -80,12 +86,13 @@ def post_news(title, body, tags, session_id, media=None, language='en'):
     except Exception as e:
         logger.exception('Failed to create news post: {0}'.format(e))
         success = False
-    db.session.close()
+        db.session.close()
     return get_news(shortTitle, session_id, language) if success else None
 
 
 def edit_news(post_id, title, body, session_id, media, language='en'):
-    news = models.NewsPost.query.filter_by(post_short=post_id).first()
+    news = models.NewsPost.query.filter_by(post_short=post_id) \
+            .options(FromCache(cache)).first()
     if news is None:
         return None
 
@@ -119,10 +126,12 @@ def edit_news(post_id, title, body, session_id, media, language='en'):
 
 
 def translate_news(post_id, language, title, body):
-    news = models.NewsPost.query.filter_by(post_short=post_id).first()
+    news = models.NewsPost.query.filter_by(post_short=post_id) \
+            .options(FromCache(cache)).first()
     if news is None:
         return None
-    lang = models.Language.query.filter_by(language_code=language).first()
+    lang = models.Language.query.filter_by(language_code=language) \
+            .options(FromCache(cache)).first()
     if(lang is None):
         return None
 
@@ -133,7 +142,8 @@ def translate_news(post_id, language, title, body):
     file.close()
 
     ret = False
-    title = models.NewsTitle.query.filter_by(news=news, language=lang).first()
+    title = models.NewsTitle.query.filter_by(news=news, language=lang) \
+            .options(FromCache(cache)).first()
     if(title is None):
         title = models.NewsTitle(news, lang, title)
         ret = True
@@ -150,7 +160,8 @@ def translate_news(post_id, language, title, body):
 
 
 def get_tag(name):
-    tag = models.NewsTag.query.filter_by(name=name).first()
+    tag = models.NewsTag.query.filter_by(name=name) \
+            .options(FromCache(cache)).first()
     if tag is None:
         return create_tag(name)
     return tag
@@ -161,7 +172,7 @@ def create_tag(name):
     try:
         db.session.add(tag)
         db.session.commit()
-        db.session.close()
+        # It won't be in the cache yet, so we must actually load it.
         return models.NewsTag.query.filter_by(name=name).first()
     except Exception as e:
         logger.exception('Failed to create tag: {0}'.format(e))
@@ -170,7 +181,8 @@ def create_tag(name):
 
 
 def post_comment(post_id, body, session_id):
-    news = models.NewsPost.query.filter_by(post_short=post_id).first()
+    news = models.NewsPost.query.filter_by(post_short=post_id) \
+            .options(FromCache(cache)).first()
     if news is None:
         return None
 

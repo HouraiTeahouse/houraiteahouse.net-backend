@@ -131,7 +131,7 @@ def translate_news(post_id, language, title, body):
     if news is None:
         return None
     lang = models.Language.query.filter_by(language_code=language) \
-            .options(FromCache(cache)).first()
+        .options(FromCache(cache)).first()
     if(lang is None):
         return None
 
@@ -143,7 +143,7 @@ def translate_news(post_id, language, title, body):
 
     ret = False
     title = models.NewsTitle.query.filter_by(news=news, language=lang) \
-            .options(FromCache(cache)).first()
+        .options(FromCache(cache)).first()
     if(title is None):
         title = models.NewsTitle(news, lang, title)
         ret = True
@@ -161,7 +161,7 @@ def translate_news(post_id, language, title, body):
 
 def get_tag(name):
     tag = models.NewsTag.query.filter_by(name=name) \
-            .options(FromCache(cache)).first()
+        .options(FromCache(cache)).first()
     if tag is None:
         return create_tag(name)
     return tag

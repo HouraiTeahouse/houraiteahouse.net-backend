@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import backref
-import code
 
 bcrypt = Bcrypt()
 db = SQLAlchemy()

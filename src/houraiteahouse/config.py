@@ -24,7 +24,12 @@ class DevelopmentConfig(BaseConfig):
         self.SQLALCHEMY_TRACK_MODIFICATIONS = config[
             'sqlalchemyTrackModifications']
 
+        self.CACHE_TYPE = 'simple'
+        self.CACHE_DEFAULT_TIMEOUT = 3600
+        self.CACHE_THRESHOLD = 5000
+
         self.SECRET_KEY = config['secretKey']
+        
 
         db_config = config['dbConfig']
         db_username = db_config['username']
@@ -36,10 +41,26 @@ class DevelopmentConfig(BaseConfig):
              ).format(db_username, db_password, db_name)
 
 
+        self.REQUIRE_CONFIRMATION = config['email']['required']
+        
+        if(self.REQUIRE_CONFIRMATION):
+            email_config = config['email']
+            self.DOMAIN = email_config['domain'] # Used when generating URLs
+            self.SECURITY_SALT = email_config['salt']
+            self.MAIL_DEFAULT_SENDER = 'no-reply@houraiteahouse.net'
+            self.MAIL_USE_TLS = False
+            self.MAIL_USE_SSL = True
+            self.MAIL_SERVER = email_config['server']
+            self.MAIL_PORT = email_config['port']
+            self.MAIL_USERNAME = email_config['username']
+            self.MAIL_PASSWORD = email_config['password']
+
+
 # Config used for unit testing
 class TestConfig(BaseConfig):
     DEBUG = True
     TESTING = True
+    REQUIRE_CONFIRMATION = False
 
 
 # Config used for the production server

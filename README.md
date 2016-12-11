@@ -38,9 +38,20 @@ Example config:
     "username" : "houraiteahouse",
     "password" : "houraiteahouse",
     "database" : "houraiteahouse"
+  },
+  "email": {
+    "required" : true,
+    "server" : "mymail.server",
+    "port" : 465,
+    "username" : "myusername",
+    "password" : "mypassword",
+    "salt" : "token_salt_1234",
+    "domain" : "houraiteahouse.net"
   }
 }
 ```
+
+Note that the email block is used only by account confirmation and can be set non-required for development.
 
 ### Running and Testing
 

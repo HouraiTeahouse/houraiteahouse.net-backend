@@ -7,7 +7,7 @@ from ..bl.auth_bl import authenticate, authorize
 from ..storage import auth_storage, models
 from ..storage.models import db
 from . import request_util
-from .request_util import handle_request_errors
+from .request_util import handle_request_errors, require_language
 
 auth = Blueprint('auth', __name__)
 
@@ -17,7 +17,7 @@ auth = Blueprint('auth', __name__)
 def register():
     json_data = request.data
 
-    if auth_storage.create_user(
+    if auth_bl.register_user(
         json_data['email'],
         json_data['username'],
         json_data['password']
@@ -31,6 +31,32 @@ def register():
     return request_util.generate_error_response(
         400,
         'A user with this name or email already exists.'
+    )
+    
+    
+@auth.route('/auth/confirm/<token>', methods=['POST'])
+@require_language('data', 'confirming email')
+@handle_request_errors('Confirmation', 'Email confirmation')
+def confirm(token):
+    json_data = request.data
+    
+    result =  auth_bl.confirm_user(token)
+    
+    if result is None:
+        return request_util.generate_error_response(
+            400,
+            'Invalid confirmation token'
+        )
+    
+    if result:
+        return request_util.generate_success_response(
+            'Email confirmation successful.',
+            'plain/text'
+        )
+
+    return request_util.generate_error_response(
+        400,
+        'Email already confirmed'
     )
 
 

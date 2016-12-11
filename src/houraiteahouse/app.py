@@ -3,7 +3,6 @@ from .common import extensions
 from .config import BaseConfig
 from .route import blueprints
 
-
 def create_app(config=BaseConfig):
     app = FlaskAPI(__name__)
     app.config.from_object(config)

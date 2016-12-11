@@ -1,7 +1,52 @@
-from flask import request
+from flask import current_app, render_template, request
 from functools import wraps
+from itsdangerous import URLSafeSerializer
 from houraiteahouse.route import request_util
 from houraiteahouse.storage import auth_storage
+from houraiteahouse.util import email_utils
+
+# User registration
+def register_user(email, username, password, language='en'):
+    # Create the user object
+    success = auth_storage.create_user(
+        email,
+        username,
+        password
+    )
+
+    if success:
+        send_confirmation(email)
+
+    return success
+
+
+def send_confirmation(email, language='en'):
+    serializer = URLSafeSerializer(current_app.config['SECRET_KEY'])
+    token = serializer.dumps(email, salt=current_app.config['SECURITY_SALT'])
+    confirm_url = 'https://{0}/confirm/{1}'.format(current_app.config['DOMAIN'], token)
+    
+    subject, template = email_utils.load_template('confirmation', language)
+    html = "<p>Please open the following link to confirm your account\n{0}".format(confirm_url)
+
+    email_utils.send_email(email, subject, html)
+    
+    
+def confirm_user(token):
+    email = confirm_token(token)
+    if not email:
+        return None
+    return auth_storage.confirm_email(email)
+
+
+def confirm_token(token):
+    serializer = URLSafeSerializer(current_app.config['SECRET_KEY'])
+    try:
+        return serializer.loads(
+            token,
+            salt=current_app.config['SECURITY_SALT']
+        )
+    except:
+        return False
 
 
 # Signin/signout calls

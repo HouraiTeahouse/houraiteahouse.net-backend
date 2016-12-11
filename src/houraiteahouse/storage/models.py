@@ -68,6 +68,8 @@ class User(db.Model):
     permissions = db.relationship(
         'UserPermissions', backref=db.backref(
             'user', lazy='dynamic'))
+    confirmed = db.Column(db.Boolean, nullable=False, default=False)
+    confirmed_on = db.Column(db.DateTime, nullable=True)
     # TODO: user registration confirmation
 
     def __init__(self, email, username, password, permissions):
@@ -76,6 +78,7 @@ class User(db.Model):
         self.password = bcrypt.generate_password_hash(password).decode('utf-8')
         self.permissions = permissions
         self.registered_on = datetime.utcnow()
+        self.confirmed = False
 
     def change_password(self, password):
         self.password = bcrypt.generate_password_hash(password).decode('utf-8')
@@ -95,6 +98,10 @@ class User(db.Model):
 
     def get_username(self):
         return self.username
+    
+    def confirm(self):
+        self.confirmed = True
+        self.confirmed_on = datetime.utcnow()
 
     def __repr__(self):
         return '<User {0}>'.format(self.username)

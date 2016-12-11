@@ -2,6 +2,7 @@ from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
 from houraiteahouse.config import DevelopmentConfig
 from houraiteahouse.app import create_app
+from houraiteahouse.config import DevelopmentConfig
 from houraiteahouse.storage.models import db
 
 # Flask migrate scripting for SQLAlchemy

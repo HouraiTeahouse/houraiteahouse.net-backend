@@ -113,6 +113,27 @@ def create_user(email, username, password):
     return success
 
 
+def confirm_email(email):
+    # This is not cached cuz it should only run once per user
+    user = models.User.query.filter_by(email=email).first()
+    
+    if user.confirmed:
+        return False
+    
+    user.confirm()
+    try:
+        db.session.merge(user)
+        db.session.commit()
+        success = True
+    except Exception as e:
+        logger.error(
+            'Failed to confirm user with email {0} due to DB error'
+            .format(email),
+            e)
+        success = False
+    return success
+
+
 def update_password(user, password):
     user.change_password(password)
     try:

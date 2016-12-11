@@ -20,6 +20,21 @@ To set up the database, follow standard SQLAlchemy setup procedures.  Use PYTHON
 * Run "manage.py db migrate" to generate DB config from models
 * Run "manage.py db upgrade" to commit changes to the database
 
+Configuration for the server is done through a JSON file - store it as /var/htwebsite/config.json.  Example config:
+```json
+{
+  "enableDebug": true,
+  "bcryptLogRounds" : 13,
+  "sqlalchemyTrackModifications" : false,
+  "secretKey" : "secret_key",
+  "dbConfig" : {
+    "username" : "houraiteahouse",
+    "password" : "houraiteahouse",
+    "database" : "houraiteahouse"
+  }
+}
+```
+
 To run the server, you have two options:
 * With PYTHONPATH src, run run.py - use this option if you are planning to modify the backend, as it will automatically pick up changes.
 * Set up uWSGI using the provided config (eg, uwsgi --master --ini [path to houraiteahouse_uwsgi.ini] and ensure the ini file and nginx config point to the correct paths

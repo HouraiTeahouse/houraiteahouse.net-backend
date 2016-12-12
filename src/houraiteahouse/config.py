@@ -6,13 +6,13 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 class BaseConfig(object):
     config = load_json_file('/var/htwebsite/config.json')
-    
+
     DEBUG = config['enableDebug']
     BCRYPT_LOG_ROUNDS = config['bcryptLogRounds']
     SQLALCHEMY_TRACK_MODIFICATIONS = config['sqlalchemyTrackModifications']
-    
+
     SECRET_KEY = config['secretKey']
-    
+
     db_config = config['dbConfig']
     db_username = db_config['username']
     db_password = db_config['password']

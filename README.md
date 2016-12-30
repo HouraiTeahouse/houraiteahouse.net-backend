@@ -20,6 +20,7 @@ virtualenv utility and use it to create a environment that uses Python 3.5.
 Then, activate the environment and continue with the installation steps below.
 
 Installation Steps:
+
 1. Install pip for python 3.
 2. Use `pip install -r requirements.txt` to install the relevant dependencies.
 3. Append the absolute path of src/houraiteahouse to the PYTHONPATH environment

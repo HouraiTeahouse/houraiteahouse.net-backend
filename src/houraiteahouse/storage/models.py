@@ -2,11 +2,14 @@ import time
 import uuid
 from datetime import datetime, timedelta
 from flask_bcrypt import Bcrypt
+from flask_cache import Cache
 from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy_cache import CachingQuery
 from sqlalchemy.orm import backref
 
 bcrypt = Bcrypt()
-db = SQLAlchemy()
+db = SQLAlchemy(session_options={'query_cls': CachingQuery})
+cache = Cache()
 
 # Database model class definitions
 

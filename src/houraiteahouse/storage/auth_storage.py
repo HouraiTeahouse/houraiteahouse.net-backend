@@ -2,7 +2,7 @@ import logging
 
 from datetime import datetime
 from flask_sqlalchemy_cache import FromCache
-from houraiteahouse.app import app, cache, db
+from houraiteahouse.storage.models import db, cache
 from sqlalchemy import inspect
 from sqlalchemy.orm.session import Session
 from . import models

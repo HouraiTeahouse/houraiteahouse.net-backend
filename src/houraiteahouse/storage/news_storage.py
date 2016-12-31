@@ -3,7 +3,7 @@ import logging
 import os
 from datetime import datetime
 from flask_sqlalchemy_cache import FromCache
-from houraiteahouse.app import app, cache, db
+from houraiteahouse.storage.models import db, cache
 from . import models
 
 logger = logging.getLogger(__name__)

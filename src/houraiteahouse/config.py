@@ -22,6 +22,8 @@ class BaseConfig(object):
         'unix_socket=/run/mysqld/mysqld.sock'.format(
             db_username, db_password, db_name)
 
-class TestingConfig(BaseConfig):
+
+class TestConfig(BaseConfig):
     DEBUG = True
+    TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite://'

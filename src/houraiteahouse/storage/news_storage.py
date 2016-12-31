@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def list_news(language='en'):
     news = models.NewsPost.query.order_by(models.NewsPost.created.desc()) \
-            .options(FromCache(cache)).all()
+        .options(FromCache(cache)).all()
     if news is None or news == []:
         return None
     newsList = []
@@ -25,7 +25,7 @@ def list_news(language='en'):
 
 def tagged_news(tag, language='en'):
     tag = models.NewsTag.query.filter_by(name=tag) \
-            .options(FromCache(cache)).first()
+        .options(FromCache(cache)).first()
     if tag is None or tag.news is None:
         return None
     newsList = []
@@ -38,7 +38,7 @@ def tagged_news(tag, language='en'):
 # (ie, [date]-shortened-title)
 def get_news(postId, session_id, language='en'):
     news = models.NewsPost.query.filter_by(post_short=postId) \
-            .options(FromCache(cache)).first()
+        .options(FromCache(cache)).first()
     if news is None:
         return None
 
@@ -92,7 +92,7 @@ def post_news(title, body, tags, session_id, media=None, language='en'):
 
 def edit_news(post_id, title, body, session_id, media, language='en'):
     news = models.NewsPost.query.filter_by(post_short=post_id) \
-            .options(FromCache(cache)).first()
+        .options(FromCache(cache)).first()
     if news is None:
         return None
 
@@ -127,7 +127,7 @@ def edit_news(post_id, title, body, session_id, media, language='en'):
 
 def translate_news(post_id, language, title, body):
     news = models.NewsPost.query.filter_by(post_short=post_id) \
-            .options(FromCache(cache)).first()
+        .options(FromCache(cache)).first()
     if news is None:
         return None
     lang = models.Language.query.filter_by(language_code=language) \
@@ -182,7 +182,7 @@ def create_tag(name):
 
 def post_comment(post_id, body, session_id):
     news = models.NewsPost.query.filter_by(post_short=post_id) \
-            .options(FromCache(cache)).first()
+        .options(FromCache(cache)).first()
     if news is None:
         return None
 

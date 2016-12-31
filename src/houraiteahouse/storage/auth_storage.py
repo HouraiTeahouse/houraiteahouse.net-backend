@@ -43,12 +43,12 @@ def close_user_session(session_uuid):
 
 def get_user(username):
     return models.User.query.filter_by(username=username) \
-            .options(FromCache(cache)).first()
+        .options(FromCache(cache)).first()
 
 
 def get_user_by_id(userId):
     return models.User.query.filter_by(user_id=userId) \
-            .options(FromCache(cache)).first()
+        .options(FromCache(cache)).first()
 
 
 def get_permissions_by_username(username):

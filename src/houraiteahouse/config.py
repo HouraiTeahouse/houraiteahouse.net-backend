@@ -4,6 +4,8 @@ from .util.file_utils import load_json_file
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 # Base configuration
+
+
 class BaseConfig(object):
     BCRYPT_LOG_ROUNDS = 13
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -12,6 +14,8 @@ class BaseConfig(object):
 
 # Config used for local development testing
 # loads config information from a JSON file
+
+
 class DevelopmentConfig(BaseConfig):
 
     def __init__(self, config_file=None):
@@ -19,7 +23,8 @@ class DevelopmentConfig(BaseConfig):
 
         self.DEBUG = config['enableDebug']
         self.BCRYPT_LOG_ROUNDS = config['bcryptLogRounds']
-        self.SQLALCHEMY_TRACK_MODIFICATIONS = config['sqlalchemyTrackModifications']
+        self.SQLALCHEMY_TRACK_MODIFICATIONS = config[
+            'sqlalchemyTrackModifications']
 
         self.SECRET_KEY = config['secretKey']
 
@@ -33,10 +38,14 @@ class DevelopmentConfig(BaseConfig):
                 db_username, db_password, db_name)
 
 # Config used for unit testing
+
+
 class TestConfig(BaseConfig):
     DEBUG = True
     TESTING = True
 
 # Config used for the production server
+
+
 class ProductionConfig(DevelopmentConfig):
     pass

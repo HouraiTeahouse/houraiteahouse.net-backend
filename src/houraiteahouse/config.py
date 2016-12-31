@@ -3,19 +3,17 @@ from .util.file_utils import load_json_file
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+
 # Base configuration
-
-
 class BaseConfig(object):
     BCRYPT_LOG_ROUNDS = 13
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = 'secret_key'
     SQLALCHEMY_DATABASE_URI = 'sqlite://'
 
+
 # Config used for local development testing
 # loads config information from a JSON file
-
-
 class DevelopmentConfig(BaseConfig):
 
     def __init__(self, config_file=None):
@@ -37,15 +35,15 @@ class DevelopmentConfig(BaseConfig):
             'unix_socket=/run/mysqld/mysqld.sock'.format(
                 db_username, db_password, db_name)
 
+
 # Config used for unit testing
-
-
 class TestConfig(BaseConfig):
     DEBUG = True
     TESTING = True
 
+
 # Config used for the production server
-
-
 class ProductionConfig(DevelopmentConfig):
-    pass
+
+    def __init__(self, config_file=None):
+        DevelopmentConfig.__init__(self, config_file)

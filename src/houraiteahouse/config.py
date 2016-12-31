@@ -12,6 +12,8 @@ class BaseConfig(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = config['sqlalchemyTrackModifications']
 
     CACHE_TYPE = 'simple'
+    CACHE_DEFAULT_TIMEOUT = 3600
+    CACHE_THRESHOLD = 5000
 
     SECRET_KEY = config['secretKey']
 

@@ -7,11 +7,20 @@ from flask_sqlalchemy_cache import CachingQuery
 from .config import BaseConfig
 
 app = FlaskAPI(__name__)
-app.config.from_object(BaseConfig)
-cors = CORS(app, headers=['Content-Type'])
-bcrypt = Bcrypt(app)
-db = SQLAlchemy(app, session_options={'query_cls': CachingQuery})
-cache = Cache(app)
+cors = CORS(headers=['Content-Type'])
+bcrypt = Bcrypt()
+cache = Cache()
+db = SQLAlchemy(session_options={'query_cls': CachingQuery})
 
-from .storage import models        # noqa
-from .route import auth_route, news_route    # noqa
+def create_app(config=BaseConfig):
+    app.config.from_object(config)
+
+    cors.init_app(app)
+    bcrypt.init_app(app)
+    db.init_app(app)
+    cache.init_app(app)
+
+    from .storage import models        # noqa
+    from .route import auth_route, news_route    # noqa
+
+    return app

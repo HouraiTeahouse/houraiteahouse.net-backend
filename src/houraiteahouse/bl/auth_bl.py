@@ -1,6 +1,5 @@
 from flask import request
 from functools import wraps
-from houraiteahouse.app import app, bcrypt, db
 from houraiteahouse.route import request_util
 from houraiteahouse.storage import auth_storage
 

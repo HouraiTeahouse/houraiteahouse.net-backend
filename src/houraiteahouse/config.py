@@ -21,3 +21,7 @@ class BaseConfig(object):
         'mysql+pymysql://{0}:{1}@127.0.0.1/{2}?charset=utf8&' \
         'unix_socket=/run/mysqld/mysqld.sock'.format(
             db_username, db_password, db_name)
+
+class TestingConfig(BaseConfig):
+    DEBUG = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite://'

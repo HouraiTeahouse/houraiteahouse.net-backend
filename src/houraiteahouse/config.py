@@ -11,6 +11,8 @@ class BaseConfig(object):
     BCRYPT_LOG_ROUNDS = config['bcryptLogRounds']
     SQLALCHEMY_TRACK_MODIFICATIONS = config['sqlalchemyTrackModifications']
 
+    CACHE_TYPE = 'simple'
+
     SECRET_KEY = config['secretKey']
 
     db_config = config['dbConfig']

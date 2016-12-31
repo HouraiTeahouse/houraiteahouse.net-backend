@@ -14,8 +14,8 @@ class BaseConfig(object):
 # loads config information from a JSON file
 class DevelopmentConfig(BaseConfig):
 
-    def __init__(self):
-        config = load_json_file('/var/htwebsite/config.json')
+    def __init__(self, config_file=None):
+        config = load_json_file(config_file or '/var/htwebsite/config.json')
 
         self.DEBUG = config['enableDebug']
         self.BCRYPT_LOG_ROUNDS = config['bcryptLogRounds']

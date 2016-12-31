@@ -1,7 +1,7 @@
 import json
 import logging
 from flask import request, Blueprint
-from ..app import bcrypt
+from ..common import bcrypt
 from ..bl import auth_bl
 from ..bl.auth_bl import authenticate, authorize
 from ..storage import auth_storage, models

@@ -18,8 +18,5 @@ class HouraiTeahouseTestCase(TestCase):
         db.session.remove()
         db.drop_all()
 
-    def test_test(self):
-        print(self.db)
-
 if __name__ == "__main__":
     unittest.main()

@@ -15,7 +15,7 @@ script:
   # PEP8 Style Checks
   - pep8 --show-source src/ test/
   # Run tests and collect coverage information
-  - coverage run -m unittest discover -v -s test
+  - coverage run --source=src/houraiteahouse -m unittest discover -v -s test
 after_success:
   coveralls
 notifications:

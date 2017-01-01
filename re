@@ -2,6 +2,7 @@ alembic==0.8.8
 bcrypt==3.1.1
 cffi==1.8.3
 click==6.6
+coverage==4.3.1
 Flask==0.12
 Flask-API==0.6.9
 Flask-Bcrypt==0.7.1

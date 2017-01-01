@@ -1,3 +1,4 @@
+from mock import mock_open, patch
 import unittest
 from test_util import HouraiTeahouseTestCase
 from houraiteahouse.storage.models import db, Language
@@ -16,16 +17,19 @@ class NewsTest(HouraiTeahouseTestCase):
         db.session.commit()
 
     def post_test_news(self, session_id=None):
-        data = {
-            'title': 'Local Man Drinks Mountain Dew',
-            'body': 'Test post pls ignore',
-            'tags': {
-                'james', 'mountain dew', 'local man'
+        # TODO(james7132): Add file read/write checks
+        m = mock_open()
+        with patch('{}.open'.format(__name__), m, create=True):
+            data = {
+                'title': 'Local Man Drinks Mountain Dew',
+                'body': 'Test post pls ignore',
+                'tags': {
+                    'james', 'mountain dew', 'local man'
+                }
             }
-        }
-        if session_id is not None:
-            data['session_id'] = session_id
-        return self.client.post('/news/post', data=data)
+            if session_id is not None:
+                data['session_id'] = session_id
+            return self.client.post('/news/post', data=data)
 
     def test_list_fails_without_language(self):
         response = self.client.get('/news/list')

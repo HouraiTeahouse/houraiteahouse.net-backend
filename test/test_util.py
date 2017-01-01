@@ -24,16 +24,16 @@ class HouraiTeahouseTestCase(TestCase):
 
     def register(self, email, username, password):
         return self.client.post('/auth/register', data={
-                'email': email,
-                'username': username,
-                'password': password
-            })
+            'email': email,
+            'username': username,
+            'password': password
+        })
 
     def login(self, username, password):
         return self.client.post('/auth/login', data={
-                'username': username,
-                'password': password,
-            })
+            'username': username,
+            'password': password,
+        })
 
     def register_and_login(self, username, password):
         self.register('{0}@{1}'.format(username, password), username, password)

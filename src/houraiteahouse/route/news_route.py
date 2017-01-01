@@ -144,6 +144,7 @@ def edit_news_wrapper(post_id):
 
     return edit_news(post_id)
 
+
 @news.route('/translate/<post_id>', methods=['PUT', 'POST'])
 @authorize('translate')
 def translate_news_wrapper(post_id):

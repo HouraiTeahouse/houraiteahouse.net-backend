@@ -48,8 +48,6 @@ def get_news(postId, session_id, language='en'):
             session_uuid=session_id).options(FromCache(cache)).first() \
             .get_user()
 
-    print(news)
-    print(language)
     ret = news_to_dict(news, caller, language)
 
     with open('/var/htwebsite/news/' + language + '/' + postId, 'r') as file:

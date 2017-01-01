@@ -5,6 +5,7 @@ from houraiteahouse.storage.models import db, Language
 
 USERNAME = 'news'
 
+
 class NewsTest(HouraiTeahouseTestCase):
 
     def setUp(self):
@@ -65,7 +66,7 @@ class NewsTest(HouraiTeahouseTestCase):
 
     def test_edit_fails_on_missing_post(self):
         self.adminify(USERNAME)
-        response = self.client.post('/news/edit/1', data= {
+        response = self.client.post('/news/edit/1', data={
             'session_id': self.session,
             'title': 'Local Man Drinks Mountain Dew',
             'body': 'Test post pls ignore',
@@ -76,7 +77,7 @@ class NewsTest(HouraiTeahouseTestCase):
         self.assert400(response)
 
     def test_edit_requires_authentication(self):
-        response = self.client.post('/news/edit/1', data= {
+        response = self.client.post('/news/edit/1', data={
             'title': 'Local Man Drinks Mountain Dew',
             'body': 'Test post pls ignore',
             'tags': {
@@ -86,7 +87,7 @@ class NewsTest(HouraiTeahouseTestCase):
         self.assert403(response)
 
     def test_edit_requires_authorization(self):
-        response = self.client.post('/news/edit/1', data= {
+        response = self.client.post('/news/edit/1', data={
             'session_id': self.session,
             'title': 'Local Man Drinks Mountain Dew',
             'body': 'Test post pls ignore',
@@ -96,23 +97,10 @@ class NewsTest(HouraiTeahouseTestCase):
         })
         self.assert403(response)
 
-    # def test_translate_fails_on_missing_post(self):
-        # self.adminify(USERNAME)
-        # response = self.client.post('/news/translate/1', data= {
-            # 'session_id': self.session,
-            # 'title': 'Local Man Drinks Mountain Dew',
-            # 'body': 'Test post pls ignore',
-            # 'tags': {
-                # 'james', 'mountain dew', 'florida man'
-            # }
-        # })
-        # self.assert400(response)
-
     def test_translate_requires_authorization(self):
-        response = self.client.post('/news/translate/1', data= {
-            'session_id': self.session,
-            }
-        })
+        response = self.client.post('/news/translate/1', data={
+            'session_id': self.session
+           })
         self.assert403(response)
 
     def test_translate_requires_authentication(self):
@@ -120,14 +108,16 @@ class NewsTest(HouraiTeahouseTestCase):
         self.assert403(response)
 
     def test_comment_post_fails_on_missing_post(self):
-        response = self.client.post('/news/comment/post/1', data= {
-            'session_id': self.session
+        response = self.client.post('/news/comment/post/1', data={
+            'session_id': self.session,
+            'body': 'Hello World'
         })
         self.assert400(response)
 
     def test_comment_post_fails_on_missing_post(self):
-        response = self.client.post('/news/comment/post/1', data= {
-            'session_id': self.session
+        response = self.client.post('/news/comment/post/1', data={
+            'session_id': self.session,
+            'body': 'Hello World'
         })
         self.assert400(response)
 

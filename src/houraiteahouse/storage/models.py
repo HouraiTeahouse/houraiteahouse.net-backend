@@ -208,6 +208,7 @@ class NewsPost(db.Model):
 
     post_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     post_short = db.Column(db.String(64), nullable=False, unique=True)
+    title = db.Column(db.String(1000), nullable=False, unique=True)
     # If someone tries to post a media URL > 1024 chars I will end them
     media = db.Column(db.String(1024))
     author_id = db.Column(

@@ -48,6 +48,8 @@ def get_news(postId, session_id, language='en'):
             session_uuid=session_id).options(FromCache(cache)).first() \
             .get_user()
 
+    print(news)
+    print(language)
     ret = news_to_dict(news, caller, language)
 
     with open('/var/htwebsite/news/' + language + '/' + postId, 'r') as file:
@@ -268,7 +270,7 @@ def news_to_dict(news, caller, language='en'):
 
     title = models.NewsTitle.query.filter_by(
         news_id=news.get_id(), language_id=lang.get_id()).first()
-    newsDict['title'] = title.get_title()
+    newsDict['title'] = title.get_title() if title is not None else news.title
 
     if news.media is not None:
         newsDict['media'] = news.media

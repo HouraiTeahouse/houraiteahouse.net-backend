@@ -1,13 +1,7 @@
 import unittest
-from houraiteahouse.storage.models import User, db
 from test_util import HouraiTeahouseTestCase
 
 class AuthTest(HouraiTeahouseTestCase):
-
-    def register_and_login(self, username, password):
-        self.register('{0}@{1}'.format(username, password), username, password)
-        login = self.login(username, password)
-        return login.json['session_id']
 
     def test_register_can_succeed(self):
         response = self.register('ad@min', 'admin', 'admin')

@@ -3,7 +3,7 @@ import unittest
 from flask_testing import TestCase
 from houraiteahouse.config import TestConfig
 from houraiteahouse.app import create_app
-from houraiteahouse.storage.models import db
+from houraiteahouse.storage.models import User, db
 
 
 class HouraiTeahouseTestCase(TestCase):
@@ -34,6 +34,11 @@ class HouraiTeahouseTestCase(TestCase):
                 'username': username,
                 'password': password,
             })
+
+    def register_and_login(self, username, password):
+        self.register('{0}@{1}'.format(username, password), username, password)
+        login = self.login(username, password)
+        return login.json['session_id']
 
     def adminify(self, username):
         """

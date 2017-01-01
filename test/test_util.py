@@ -1,3 +1,4 @@
+from json import loads
 import unittest
 from flask_testing import TestCase
 from houraiteahouse.config import TestConfig
@@ -18,11 +19,8 @@ class HouraiTeahouseTestCase(TestCase):
         db.session.remove()
         db.drop_all()
 
-    def test_test(self):
-        pass
-
-    def test_test_test(self):
-        pass
+    def assert_error(self, response, error):
+        self.assertEquals(response.json, {'message': error})
 
 if __name__ == "__main__":
     unittest.main()

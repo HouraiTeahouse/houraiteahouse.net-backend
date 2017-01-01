@@ -19,16 +19,16 @@ class NewsTest(HouraiTeahouseTestCase):
     def post_test_news(self, session_id=None):
         # TODO(james7132): Add file read/write checks
         m = mock_open()
-        with patch('{}.open'.format(__name__), m, create=True):
-            data = {
-                'title': 'Local Man Drinks Mountain Dew',
-                'body': 'Test post pls ignore',
-                'tags': {
-                    'james', 'mountain dew', 'local man'
-                }
+        data = {
+            'title': 'Local Man Drinks Mountain Dew',
+            'body': 'Test post pls ignore',
+            'tags': {
+                'james', 'mountain dew', 'local man'
             }
-            if session_id is not None:
-                data['session_id'] = session_id
+        }
+        if session_id is not None:
+            data['session_id'] = session_id
+        with patch('builtins.open', m, create=True):
             return self.client.post('/news/post', data=data)
 
     def test_list_fails_without_language(self):

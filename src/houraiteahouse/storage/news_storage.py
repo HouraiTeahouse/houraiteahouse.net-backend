@@ -74,9 +74,8 @@ def post_news(title, body, tags, session_id, media=None, language='en'):
 
     created = datetime.utcnow()
     shortTitle = readDate(created) + '-' + title.replace(' ', '-')[:53]
-    file = open('/var/htwebsite/news/' + language + '/' + shortTitle, 'w')
-    file.write(body)
-    file.close()
+    with open('/var/htwebsite/news/' + language + '/' + shortTitle, 'w') as f:
+        f.write(body)
 
     news = models.NewsPost(shortTitle, title, created, author, tagObjs, media)
     try:
@@ -103,9 +102,9 @@ def edit_news(post_id, title, body, session_id, media, language='en'):
 
     body = body.replace('\n', '<br />')  # replace linebreaks with HTML breaks
 
-    file = open('/var/htwebsite/news/' + language + '/' + news.post_short, 'w')
-    file.write(body)
-    file.close()
+    with open('/var/htwebsite/news/' + language + '/' + news.post_short, 'w') \
+            as f:
+        f.write(body)
 
     news.title = title
     news.media = media
@@ -137,9 +136,9 @@ def translate_news(post_id, language, title, body):
 
     body = body.replace('\n', '<br />')  # replace linebreaks with HTML breaks
 
-    file = open('/var/htwebsite/news/' + language + '/' + news.post_short, 'w')
-    file.write(body)
-    file.close()
+    with open('/var/htwebsite/news/' + language + '/' + news.post_short, 'w') \
+            as f:
+        f.write(body)
 
     ret = False
     title = models.NewsTitle.query.filter_by(news=news, language=lang) \

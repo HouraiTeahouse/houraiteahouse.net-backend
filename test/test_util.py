@@ -20,7 +20,41 @@ class HouraiTeahouseTestCase(TestCase):
         db.drop_all()
 
     def assert_error(self, response, error):
-        self.assertEquals(response.json, {'message': error})
+        self.assertEqual(response.json, {'message': error})
+
+    def register(self, email, username, password):
+        return self.client.post('/auth/register', data={
+                'email': email,
+                'username': username,
+                'password': password
+            })
+
+    def login(self, username, password):
+        return self.client.post('/auth/login', data={
+                'username': username,
+                'password': password,
+            })
+
+    def adminify(self, username):
+        """
+            Finds a user by their username in the database.
+            Grants them all permissions.
+            Returns the corresponding user object
+        """
+        user = User.query.filter_by(username=username).first()
+        self.assertIsNotNone(user)
+        perms = user.get_permissions()
+        perms.master = True
+        perms.admin = True
+        perms.team = True
+        perms.wiki = True
+        perms.news = True
+        perms.translate = True
+        perms.comment = True
+
+        db.session.merge(perms)
+        db.session.commit()
+        return user
 
 if __name__ == "__main__":
     unittest.main()

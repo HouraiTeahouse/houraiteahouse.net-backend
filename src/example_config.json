@@ -1,0 +1,11 @@
+{
+  "enableDebug": true,
+  "bcryptLogRounds" : 13,
+  "sqlalchemyTrackModifications" : false,
+  "secretKey" : "secret_key",
+  "dbConfig" : {
+    "username" : "houraiteahouse",
+    "password" : "houraiteahouse",
+    "database" : "houraiteahouse"
+  }
+}

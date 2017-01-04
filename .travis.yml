@@ -1,22 +1,23 @@
-language: python 
+language: python
 python:
   - "3.5"
-install: 
+install:
   # install dependencies
-  - pip install -r requirements.txt 
+  - pip install -r requirements.txt
   # install testing tools
   - pip install coverage
   - pip install coveralls
-  - pip install pep8 
-script: 
+  - pip install pep8
+script:
   # PEP8 Style Checks
   - pep8 --show-source src/ test/
   # Run tests and collect coverage information
   - coverage run -m unittest discover -v -s test
+cache: pip
 after_success:
   coveralls
 notifications:
-  webhooks: 
+  webhooks:
     urls:
       - https://discordapp.com/api/webhooks/242910675729383424/rmTqNg0mxXbEBcjJiUbOrTX3Ar58azGUryaL0vjApUtQuAWXSpuerogDr9fflmeO5UEw
     on_success: change

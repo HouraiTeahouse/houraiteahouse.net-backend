@@ -16,6 +16,7 @@ script:
   - pep8 --show-source src/ test/
   # Run tests and collect coverage information
   - coverage run --source=src/houraiteahouse -m unittest discover -v -s test
+cache: pip
 after_success:
   coveralls
 notifications:

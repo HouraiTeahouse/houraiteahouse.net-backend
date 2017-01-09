@@ -31,7 +31,7 @@ class DevelopmentConfig(BaseConfig):
         db_password = db_config['password']
         db_name = db_config['database']
         self.SQLALCHEMY_DATABASE_URI = \
-            'postgresql+psycopg2://{0}:{1}@127.0.0.1/{2}?client_encoding=utf8' \
+            'postgresql+psycopg2://{0}:{1}@127.0.0.1/{2}?client_encoding=utf8'\
             .format(db_username, db_password, db_name)
 
 

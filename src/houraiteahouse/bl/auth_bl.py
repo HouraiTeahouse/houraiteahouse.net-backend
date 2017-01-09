@@ -18,9 +18,12 @@ def start_user_session(username, password, remember_me):
         return None
     if authenticate_user(user, password):
         userSession = auth_storage.new_user_session(user, remember_me)
-        ret = dict()
-        ret['session_id'] = userSession.get_uuid()
-        ret['permissions'] = userSession.get_user().permissions.__dict__
+        ret = {
+            'username': userSession.user.username,
+            'email': userSession.user.email,
+            'session_id': userSession.get_uuid(),
+            'permissions':  userSession.get_user().permissions.__dict__
+        }
         ret['permissions'].pop('_sa_instance_state')
         if not remember_me:
             ret['expiration'] = userSession.get_expiration()

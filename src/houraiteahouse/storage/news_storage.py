@@ -3,7 +3,7 @@ import logging
 import os
 from datetime import datetime
 from flask_sqlalchemy_cache import FromCache
-from houraiteahouse.app import app, cache, db
+from houraiteahouse.storage.models import db, cache
 from . import models
 
 logger = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def list_news(language='en'):
     news = models.NewsPost.query.order_by(models.NewsPost.created.desc()) \
-            .options(FromCache(cache)).all()
+        .options(FromCache(cache)).all()
     if news is None or news == []:
         return None
     newsList = []
@@ -25,7 +25,7 @@ def list_news(language='en'):
 
 def tagged_news(tag, language='en'):
     tag = models.NewsTag.query.filter_by(name=tag) \
-            .options(FromCache(cache)).first()
+        .options(FromCache(cache)).first()
     if tag is None or tag.news is None:
         return None
     newsList = []
@@ -38,7 +38,7 @@ def tagged_news(tag, language='en'):
 # (ie, [date]-shortened-title)
 def get_news(postId, session_id, language='en'):
     news = models.NewsPost.query.filter_by(post_short=postId) \
-            .options(FromCache(cache)).first()
+        .options(FromCache(cache)).first()
     if news is None:
         return None
 
@@ -74,9 +74,8 @@ def post_news(title, body, tags, session_id, media=None, language='en'):
 
     created = datetime.utcnow()
     shortTitle = readDate(created) + '-' + title.replace(' ', '-')[:53]
-    file = open('/var/htwebsite/news/' + language + '/' + shortTitle, 'w')
-    file.write(body)
-    file.close()
+    with open('/var/htwebsite/news/' + language + '/' + shortTitle, 'w') as f:
+        f.write(body)
 
     news = models.NewsPost(shortTitle, title, created, author, tagObjs, media)
     try:
@@ -92,7 +91,7 @@ def post_news(title, body, tags, session_id, media=None, language='en'):
 
 def edit_news(post_id, title, body, session_id, media, language='en'):
     news = models.NewsPost.query.filter_by(post_short=post_id) \
-            .options(FromCache(cache)).first()
+        .options(FromCache(cache)).first()
     if news is None:
         return None
 
@@ -103,9 +102,9 @@ def edit_news(post_id, title, body, session_id, media, language='en'):
 
     body = body.replace('\n', '<br />')  # replace linebreaks with HTML breaks
 
-    file = open('/var/htwebsite/news/' + language + '/' + news.post_short, 'w')
-    file.write(body)
-    file.close()
+    with open('/var/htwebsite/news/' + language + '/' + news.post_short, 'w') \
+            as f:
+        f.write(body)
 
     news.title = title
     news.media = media
@@ -127,7 +126,7 @@ def edit_news(post_id, title, body, session_id, media, language='en'):
 
 def translate_news(post_id, language, title, body):
     news = models.NewsPost.query.filter_by(post_short=post_id) \
-            .options(FromCache(cache)).first()
+        .options(FromCache(cache)).first()
     if news is None:
         return None
     lang = models.Language.query.filter_by(language_code=language) \
@@ -137,9 +136,9 @@ def translate_news(post_id, language, title, body):
 
     body = body.replace('\n', '<br />')  # replace linebreaks with HTML breaks
 
-    file = open('/var/htwebsite/news/' + language + '/' + news.post_short, 'w')
-    file.write(body)
-    file.close()
+    with open('/var/htwebsite/news/' + language + '/' + news.post_short, 'w') \
+            as f:
+        f.write(body)
 
     ret = False
     title = models.NewsTitle.query.filter_by(news=news, language=lang) \
@@ -182,7 +181,7 @@ def create_tag(name):
 
 def post_comment(post_id, body, session_id):
     news = models.NewsPost.query.filter_by(post_short=post_id) \
-            .options(FromCache(cache)).first()
+        .options(FromCache(cache)).first()
     if news is None:
         return None
 
@@ -268,7 +267,7 @@ def news_to_dict(news, caller, language='en'):
 
     title = models.NewsTitle.query.filter_by(
         news_id=news.get_id(), language_id=lang.get_id()).first()
-    newsDict['title'] = title.get_title()
+    newsDict['title'] = title.get_title() if title is not None else news.title
 
     if news.media is not None:
         newsDict['media'] = news.media

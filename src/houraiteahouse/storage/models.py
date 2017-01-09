@@ -2,11 +2,14 @@ import time
 import uuid
 from datetime import datetime, timedelta
 from flask_bcrypt import Bcrypt
+from flask_cache import Cache
 from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy_cache import CachingQuery
 from sqlalchemy.orm import backref
 
 bcrypt = Bcrypt()
-db = SQLAlchemy()
+db = SQLAlchemy(session_options={'query_cls': CachingQuery})
+cache = Cache()
 
 # Database model class definitions
 
@@ -205,6 +208,7 @@ class NewsPost(db.Model):
 
     post_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     post_short = db.Column(db.String(64), nullable=False, unique=True)
+    title = db.Column(db.String(1000), nullable=False, unique=True)
     # If someone tries to post a media URL > 1024 chars I will end them
     media = db.Column(db.String(1024))
     author_id = db.Column(

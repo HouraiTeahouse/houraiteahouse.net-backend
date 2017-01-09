@@ -1,6 +1,5 @@
 from flask import request
 from functools import wraps
-from houraiteahouse.app import app, bcrypt, db
 from houraiteahouse.route import request_util
 from houraiteahouse.storage import auth_storage
 
@@ -112,7 +111,7 @@ def authorize(action_type):
             # data is present
             if not authorization_check(action_type, reqdat['session_id']):
                 return request_util.generate_error_response(
-                    403, 'You must be logged in to perform this action!')
+                    403, 'You do not have permission to do this.')
             return func(*args, **kwargs)
         return authorize_and_call
     return authz_wrapper

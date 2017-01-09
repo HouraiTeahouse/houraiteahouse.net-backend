@@ -4,24 +4,46 @@ from .util.file_utils import load_json_file
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 
+# Base configuration
 class BaseConfig(object):
-    config = load_json_file('/var/htwebsite/config.json')
+    BCRYPT_LOG_ROUNDS = 13
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SECRET_KEY = 'secret_key'
+    SQLALCHEMY_DATABASE_URI = 'sqlite://'
 
-    DEBUG = config['enableDebug']
-    BCRYPT_LOG_ROUNDS = config['bcryptLogRounds']
-    SQLALCHEMY_TRACK_MODIFICATIONS = config['sqlalchemyTrackModifications']
 
-    CACHE_TYPE = 'simple'
-    CACHE_DEFAULT_TIMEOUT = 3600
-    CACHE_THRESHOLD = 5000
+# Config used for local development testing
+# loads config information from a JSON file
+class DevelopmentConfig(BaseConfig):
 
-    SECRET_KEY = config['secretKey']
+    def __init__(self, config_file=None):
+        config = load_json_file(config_file or '/var/htwebsite/config.json')
 
-    db_config = config['dbConfig']
-    db_username = db_config['username']
-    db_password = db_config['password']
-    db_name = db_config['database']
-    SQLALCHEMY_DATABASE_URI = \
-        'mysql+pymysql://{0}:{1}@127.0.0.1/{2}?charset=utf8&' \
-        'unix_socket=/run/mysqld/mysqld.sock'.format(
-            db_username, db_password, db_name)
+        self.DEBUG = config['enableDebug']
+        self.BCRYPT_LOG_ROUNDS = config['bcryptLogRounds']
+        self.SQLALCHEMY_TRACK_MODIFICATIONS = config[
+            'sqlalchemyTrackModifications']
+
+        self.SECRET_KEY = config['secretKey']
+
+        db_config = config['dbConfig']
+        db_username = db_config['username']
+        db_password = db_config['password']
+        db_name = db_config['database']
+        self.SQLALCHEMY_DATABASE_URI = \
+            'mysql+pymysql://{0}:{1}@127.0.0.1/{2}?charset=utf8&' \
+            'unix_socket=/run/mysqld/mysqld.sock'.format(
+                db_username, db_password, db_name)
+
+
+# Config used for unit testing
+class TestConfig(BaseConfig):
+    DEBUG = True
+    TESTING = True
+
+
+# Config used for the production server
+class ProductionConfig(DevelopmentConfig):
+
+    def __init__(self, config_file=None):
+        DevelopmentConfig.__init__(self, config_file)

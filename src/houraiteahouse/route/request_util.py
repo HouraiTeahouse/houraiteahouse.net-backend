@@ -35,8 +35,6 @@ def handle_request_errors(internalAction, externalAction=None):
     def request_error_wrapper(func):
         @wraps(func)
         def wrap_request(*args, **kwargs):
-            print(*args)
-            print(**kwargs)
             try:
                 return func(*args, **kwargs)
 

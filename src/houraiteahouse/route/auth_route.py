@@ -1,15 +1,18 @@
 import json
 import logging
-from flask import request
-from ..app import app, bcrypt, db
+from flask import request, Blueprint
+from ..common import bcrypt
 from ..bl import auth_bl
 from ..bl.auth_bl import authenticate, authorize
 from ..storage import auth_storage, models
+from ..storage.models import db
 from . import request_util
 from .request_util import handle_request_errors
 
+auth = Blueprint('auth', __name__)
 
-@app.route('/auth/register', methods=['POST'])
+
+@auth.route('/register', methods=['POST'])
 @handle_request_errors('Registration')
 def register():
     json_data = request.data
@@ -31,7 +34,7 @@ def register():
     )
 
 
-@app.route('/auth/login', methods=['POST'])
+@auth.route('/login', methods=['POST'])
 @handle_request_errors('Login')
 def login():
     json_data = request.data
@@ -56,7 +59,7 @@ def login():
     )
 
 
-@app.route('/auth/logout', methods=['POST'])
+@auth.route('/logout', methods=['POST'])
 @authenticate
 @handle_request_errors('Logout')
 def logout():
@@ -70,7 +73,7 @@ def logout():
     )
 
 
-@app.route('/auth/status', methods=['GET'])
+@auth.route('/status', methods=['GET'])
 @handle_request_errors('Fetching login status')
 def status():
     json_data = request.args
@@ -97,7 +100,7 @@ def status():
     )
 
 
-@app.route('/auth/update', methods=['POST'])
+@auth.route('/update', methods=['POST'])
 @authenticate
 @handle_request_errors('Updating password')
 def change_password():
@@ -123,7 +126,7 @@ def change_password():
 
 # Can only be used by True Administrators
 
-@app.route('/auth/permissions/<username>', methods=['GET'])
+@auth.route('/permissions/<username>', methods=['GET'])
 @authorize('admin')
 @handle_request_errors('Loading user permissions')
 def get_user_permissions(username):
@@ -145,7 +148,7 @@ def get_user_permissions(username):
     )
 
 
-@app.route('/auth/permissions/<username>', methods=['POST', 'PUT'])
+@auth.route('/permissions/<username>', methods=['POST', 'PUT'])
 @authorize('admin')
 @handle_request_errors('Updating user permissions')
 def set_user_permissions(username):

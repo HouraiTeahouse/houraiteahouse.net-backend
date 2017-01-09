@@ -1,18 +1,17 @@
 import json
 import logging
 
-from flask import Flask, request
-from houraiteahouse.app import app
+from flask import Flask, request, Blueprint
 from houraiteahouse.bl.auth_bl import authorize
 from houraiteahouse.storage import news_storage
 from . import request_util
 from .request_util import handle_request_errors, require_language
 
-
+news = Blueprint('news', __name__)
 logger = logging.getLogger(__name__)
 
 
-@app.route('/news/list', methods=['GET'])
+@news.route('/list', methods=['GET'])
 @require_language('args', 'fetching news')
 @handle_request_errors('Fetching news', 'Fetching news list')
 def list_news():
@@ -30,7 +29,7 @@ def list_news():
     )
 
 
-@app.route('/news/tag/get/<tag_name>', methods=['GET'])
+@news.route('/tag/get/<tag_name>', methods=['GET'])
 def get_tag_wrapper(tag_name):
     @require_language('args',
                       'fetching news tagged with \'{0}\''
@@ -57,7 +56,7 @@ def get_tag_wrapper(tag_name):
     return get_tag(tag_name)
 
 
-@app.route('/news/get/<post_id>', methods=['GET'])
+@news.route('/get/<post_id>', methods=['GET'])
 def get_news_wrapper(post_id):
     @require_language('args', 'fetching news post {0}'
                       .format(post_id))
@@ -85,7 +84,7 @@ def get_news_wrapper(post_id):
     return get_news(post_id)
 
 
-@app.route('/news/post', methods=['PUT', 'POST'])
+@news.route('/post', methods=['PUT', 'POST'])
 @authorize('news')
 @handle_request_errors('Creating news', 'Posting news')
 def create_news():
@@ -108,14 +107,14 @@ def create_news():
     return request_util.generate_success_response(
         json.dumps(
             {
-                'post_id': news.post_id
+                'post_id': news['post_id']
             }
         ),
         'application/json'
     )
 
 
-@app.route('/news/edit/<post_id>', methods=['PUT', 'POST'])
+@news.route('/edit/<post_id>', methods=['PUT', 'POST'])
 @authorize('news')
 def edit_news_wrapper(post_id):
     @handle_request_errors('Editing news post \'{0}\''
@@ -146,7 +145,7 @@ def edit_news_wrapper(post_id):
     return edit_news(post_id)
 
 
-@app.route('/news/translate/<post_id>', methods=['PUT', 'POST'])
+@news.route('/translate/<post_id>', methods=['PUT', 'POST'])
 @authorize('translate')
 def translate_news_wrapper(post_id):
     @require_language('data', 'translating post \'{0}\''.format(post_id))
@@ -176,7 +175,7 @@ def translate_news_wrapper(post_id):
     return translate_news(post_id)
 
 
-@app.route('/news/comment/post/<post_id>', methods=['PUT', 'POST'])
+@news.route('/comment/post/<post_id>', methods=['PUT', 'POST'])
 @authorize('comment')
 def create_comment_wrapper(post_id):
     @handle_request_errors('Posting comment on \'{0}\''
@@ -203,7 +202,7 @@ def create_comment_wrapper(post_id):
     return create_comment(post_id)
 
 
-@app.route('/news/comment/edit/<comment_id>', methods=['PUT', 'POST'])
+@news.route('/comment/edit/<comment_id>', methods=['PUT', 'POST'])
 @authorize('comment')
 def edit_comment_wrapper(comment_id):
     @handle_request_errors('Editing comment \'{0}\''
@@ -239,7 +238,7 @@ def edit_comment_wrapper(comment_id):
     return edit_comment(comment_id)
 
 
-@app.route('/news/comment/delete/<comment_id>', methods=['PUT', 'POST'])
+@news.route('/comment/delete/<comment_id>', methods=['PUT', 'POST'])
 @authorize('comment')
 def delete_comment_wrapper(comment_id):
     @handle_request_errors('Deleting comment \'{0}\''

@@ -2,7 +2,7 @@ import logging
 
 from datetime import datetime
 from flask_sqlalchemy_cache import FromCache
-from houraiteahouse.app import app, cache, db
+from houraiteahouse.storage.models import db, cache
 from sqlalchemy import inspect
 from sqlalchemy.orm.session import Session
 from . import models
@@ -43,12 +43,12 @@ def close_user_session(session_uuid):
 
 def get_user(username):
     return models.User.query.filter_by(username=username) \
-            .options(FromCache(cache)).first()
+        .options(FromCache(cache)).first()
 
 
 def get_user_by_id(userId):
     return models.User.query.filter_by(user_id=userId) \
-            .options(FromCache(cache)).first()
+        .options(FromCache(cache)).first()
 
 
 def get_permissions_by_username(username):

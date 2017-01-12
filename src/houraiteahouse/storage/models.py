@@ -81,7 +81,8 @@ class User(db.Model):
         self.password = bcrypt.generate_password_hash(password).decode('utf-8')
 
     def check_password(self, password):
-        return bcrypt.check_password_hash(self.password.encode('utf-8'), password)
+        return bcrypt.check_password_hash(
+            self.password.encode('utf-8'), password)
 
     def is_active(self):
         return True

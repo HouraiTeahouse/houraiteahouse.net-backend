@@ -4,19 +4,19 @@
 
 # Hourai Teahouse Website Backend
 
-This is the backend package for the Hourai Teahouse website.  Thus far it was written with a "get pieces working" mindset rather than a proper design/plan and thus it requires significant cleanup & improvement.
+This is the backend package for the Hourai Teahouse website.
 
 ## Setup
 
 0. Install python 3.5.3 or newer.
-0. Optionally use virtualenv to set up a virtual enviroment for the project.
+0. Though it is not required, it is strongly recommended that you use a [virtualenv](https://virtualenv.pypa.io/en/stable/) to set up a virtual enviroment for the project.
 0. Use ``pip install -r requirements.txt`` to install the relevant dependencies.
 
 ### Setting up the database
 
 To set up the database, follow standard SQLAlchemy setup procedures.  Use PYTHONPATH src/houraiteahouse:
 0.  Run `setup.py` to create the necessary files and directories.
-0.  Setup/configure mysql (or whatever you're using instead).  You can optionally use manage.py db create_db and other options to simplify this process.
+0.  Setup/configure PostgreSQL (or whatever you're using instead). You can optionally use manage.py db create_db and other options to simplify this process.
 0.  Run "manage.py db init" to initialize the Flask migrations directory
 0.  Run "manage.py db migrate" to generate DB config from models
 0.  Run "manage.py db upgrade" to commit changes to the database

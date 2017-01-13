@@ -31,9 +31,9 @@ class DevelopmentConfig(BaseConfig):
         db_password = db_config['password']
         db_name = db_config['database']
         self.SQLALCHEMY_DATABASE_URI = \
-            'mysql+pymysql://{0}:{1}@127.0.0.1/{2}?charset=utf8&' \
-            'unix_socket=/run/mysqld/mysqld.sock'.format(
-                db_username, db_password, db_name)
+            ('postgresql+psycopg2://{0}:{1}@127.0.0.1/{2}'
+             '?client_encoding="utf-8"'
+             ).format(db_username, db_password, db_name)
 
 
 # Config used for unit testing

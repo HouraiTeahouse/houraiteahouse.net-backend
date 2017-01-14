@@ -35,7 +35,7 @@ class Language(db.Model):
     __tablename__ = "languages"
 
     language_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    language_code = db.Column(db.String(3), nullable=False)
+    language_code = db.Column(db.String(10), nullable=False)
     language_name = db.Column(db.String(50))
 
     def __init__(self, code, name):

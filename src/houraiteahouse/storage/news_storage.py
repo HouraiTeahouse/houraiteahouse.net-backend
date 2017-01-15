@@ -60,7 +60,9 @@ def post_news(title, body, tags, session_id, media=None, language='en'):
     lang = models.Language.query.filter_by(language_code=language) \
         .options(FromCache(cache)).first()
 
-    tagObjs = []
+    if lang is None:
+        return None
+
     for tagName in tags:
         tag = get_tag(tagName)
         if tag is None:

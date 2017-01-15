@@ -12,7 +12,7 @@ class NewsTest(HouraiTeahouseTestCase):
     def setUp(self):
         HouraiTeahouseTestCase.setUp(self)
         self.session = self.register_and_login(USERNAME, 'password')
-        lang = Language('en', 'English')
+        lang = Language('en_US', 'English')
         db.session.add(lang)
         db.session.commit()
 
@@ -36,7 +36,7 @@ class NewsTest(HouraiTeahouseTestCase):
         self.assert400(response)
 
     def test_list_fails_on_empty_news(self):
-        response = self.client.get('/news/list?language=en')
+        response = self.client.get('/news/list?language=en_US')
         self.assert404(response)
 
     def test_tag_fails_on_empty_tag(self):
@@ -48,7 +48,7 @@ class NewsTest(HouraiTeahouseTestCase):
         self.assert400(response)
 
     def test_get_fails_on_missing_post(self):
-        response = self.client.get('/news/get/1?language=en')
+        response = self.client.get('/news/get/1?language=en_US')
         self.assert404(response)
 
     def test_post(self):

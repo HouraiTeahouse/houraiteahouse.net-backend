@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 # TODO: Major refactor to remove a lot of code duplication and cache read calls
 
 
-def list_news(language='en_US'):
+def list_news(language='en'):
     news = models.NewsPost.query.order_by(models.NewsPost.created.desc()) \
         .options(FromCache(cache)).all()
     if news is None or news == []:
@@ -23,7 +23,7 @@ def list_news(language='en_US'):
     return newsList
 
 
-def tagged_news(tag, language='en_US'):
+def tagged_news(tag, language='en'):
     tag = models.NewsTag.query.filter_by(name=tag) \
         .options(FromCache(cache)).first()
     if tag is None or tag.news is None:
@@ -36,7 +36,7 @@ def tagged_news(tag, language='en_US'):
 
 # "postId" is a misnomer, it's actually the short title
 # (ie, [date]-shortened-title)
-def get_news(postId, session_id, language='en_US'):
+def get_news(postId, session_id, language='en'):
     news = models.NewsPost.query.filter_by(post_short=postId) \
         .options(FromCache(cache)).first()
     if news is None:
@@ -56,7 +56,7 @@ def get_news(postId, session_id, language='en_US'):
     return ret
 
 
-def post_news(title, body, tags, session_id, media=None, language='en_US'):
+def post_news(title, body, tags, session_id, media=None, language='en'):
     lang = models.Language.query.filter_by(language_code=language) \
         .options(FromCache(cache)).first()
 
@@ -77,7 +77,11 @@ def post_news(title, body, tags, session_id, media=None, language='en_US'):
 
     created = datetime.utcnow()
     shortTitle = readDate(created) + '-' + title.replace(' ', '-')[:53]
-    with open('/var/htwebsite/news/' + language + '/' + shortTitle, 'w') as f:
+    path = '/var/htwebsite/news/' + language + '/' + shortTitle
+    directory = os.path.dirname(path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    with open(path, 'w') as f:
         f.write(body)
 
     news = models.NewsPost(shortTitle, title, created, author, tagObjs, media)
@@ -96,7 +100,7 @@ def post_news(title, body, tags, session_id, media=None, language='en_US'):
     return get_news(shortTitle, session_id, language) if success else None
 
 
-def edit_news(post_id, title, body, session_id, media, language='en_US'):
+def edit_news(post_id, title, body, session_id, media, language='en'):
     news = models.NewsPost.query.filter_by(post_short=post_id) \
         .options(FromCache(cache)).first()
     if news is None:
@@ -258,13 +262,13 @@ def delete_comment(comment_id, session_id):
         raise e
 
 
-def news_to_dict(news, caller, language='en_US'):
+def news_to_dict(news, caller, language='en'):
     try:
         lang = models.Language.query.filter_by(language_code=language) \
             .options(FromCache(cache)).first()
     except Exception:
         logger.warning("Unrecognized language code {}".format(language))
-        lang = models.Language.query.filter_by(language_code='en_US') \
+        lang = models.Language.query.filter_by(language_code='en') \
             .options(FromCache(cache)).first()
 
     newsDict = dict()

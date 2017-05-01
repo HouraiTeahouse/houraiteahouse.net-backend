@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from flask_sqlalchemy_cache import FromCache
 from houraiteahouse.storage.models import db, cache
-from sqlalchemy import inspect
+from sqlalchemy import inspect, exc
 from sqlalchemy.orm.session import Session
 from . import models
 
@@ -27,17 +27,26 @@ def new_user_session(user, remember_me):
 
 
 def get_user_session(session_uuid):
-    return models.UserSession.query.filter_by(session_uuid=session_uuid) \
-        .options(FromCache(cache)).first()
+    return models.UserSession.query \
+        .filter_by(session_uuid=session_uuid) \
+        .options(FromCache(cache)) \
+        .first()
+
+
+def close_all_sessions(user_id):
+    models.UserSession.query \
+        .filter_by(user_id=user_id) \
+        .options(FromCache(cache)) \
+        .delete()
+    db.session.commit()
 
 
 def close_user_session(session_uuid):
-    userSession = models.UserSession.query.filter_by(
-        session_uuid=session_uuid).options(FromCache(cache)).first()
-    if userSession is None:
-        return
-    userSession.valid_before = datetime.utcnow()
-    db.session.merge(userSession)
+    userSession = models.UserSession.query \
+        .filter_by(session_uuid=session_uuid) \
+        .options(FromCache(cache)) \
+        .first()
+    db.session.delete(userSession)
     db.session.commit()
 
 
@@ -104,25 +113,34 @@ def create_user(email, username, password):
         db.session.add(user)
         db.session.add(permissions)
         db.session.commit()
-        success = True
-    except Exception as e:
+        return True
+    except exc.IntegrityError:
+        logger.warning("Attempted to create a non-unique user %s with email %s",
+                       username, email)
+    except Exception as error:
         logger.error('Failed to create user {0} with email {1} due to DB error'
                      .format(username, email),
-                     e)
-        success = False
-    return success
+                     error)
+    return False
 
 
 def update_password(user, password):
+    """
+        params:
+            user: A User object
+            password: the users' new password
+        return: boolean, whether the change was successful
+    """
     user.change_password(password)
+    # Changing passwords should the user out of all of their sessions
+    close_all_sessions(user.user_id)
     try:
         db.session.add(user)
         db.session.commit()
-        success = True
+        return True
     except Exception as e:
         logger.error(
             'Failed to update password for user {0} due to DB error'
             .format(user),
             e)
-        success = False
-    return success
+    return False

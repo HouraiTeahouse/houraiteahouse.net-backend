@@ -11,7 +11,7 @@ news = Blueprint('news', __name__)
 logger = logging.getLogger(__name__)
 
 
-@news.route('/list', methods=['GET'])
+@news.route('', methods=['GET'])
 @require_language('args', 'fetching news')
 @handle_request_errors('Fetching news', 'Fetching news list')
 def list_news():
@@ -29,7 +29,7 @@ def list_news():
     )
 
 
-@news.route('/tag/get/<tag_name>', methods=['GET'])
+@news.route('/tag/<tag_name>', methods=['GET'])
 def get_tag_wrapper(tag_name):
     @require_language('args',
                       'fetching news tagged with \'{0}\''
@@ -56,7 +56,7 @@ def get_tag_wrapper(tag_name):
     return get_tag(tag_name)
 
 
-@news.route('/get/<post_id>', methods=['GET'])
+@news.route('/<post_id>', methods=['GET'])
 def get_news_wrapper(post_id):
     @require_language('args', 'fetching news post {0}'
                       .format(post_id))
@@ -84,7 +84,7 @@ def get_news_wrapper(post_id):
     return get_news(post_id)
 
 
-@news.route('/post', methods=['PUT', 'POST'])
+@news.route('', methods=['POST'])
 @authorize('news')
 @handle_request_errors('Creating news', 'Posting news')
 def create_news():
@@ -114,7 +114,7 @@ def create_news():
     )
 
 
-@news.route('/edit/<post_id>', methods=['PUT', 'POST'])
+@news.route('/<post_id>', methods=['PUT'])
 @authorize('news')
 def edit_news_wrapper(post_id):
     @handle_request_errors('Editing news post \'{0}\''
@@ -145,7 +145,7 @@ def edit_news_wrapper(post_id):
     return edit_news(post_id)
 
 
-@news.route('/translate/<post_id>', methods=['PUT', 'POST'])
+@news.route('/<post_id>/translate', methods=['PUT', 'POST'])
 @authorize('translate')
 def translate_news_wrapper(post_id):
     @require_language('data', 'translating post \'{0}\''.format(post_id))
@@ -175,7 +175,7 @@ def translate_news_wrapper(post_id):
     return translate_news(post_id)
 
 
-@news.route('/comment/post/<post_id>', methods=['PUT', 'POST'])
+@news.route('/<post_id>/comment', methods=['POST'])
 @authorize('comment')
 def create_comment_wrapper(post_id):
     @handle_request_errors('Posting comment on \'{0}\''
@@ -202,9 +202,9 @@ def create_comment_wrapper(post_id):
     return create_comment(post_id)
 
 
-@news.route('/comment/edit/<comment_id>', methods=['PUT', 'POST'])
+@news.route('/<post_id>/comment/<comment_id>', methods=['PUT'])
 @authorize('comment')
-def edit_comment_wrapper(comment_id):
+def edit_comment_wrapper(post_id, comment_id):
     @handle_request_errors('Editing comment \'{0}\''
                            .format(comment_id),
                            'Editing comment')
@@ -238,7 +238,7 @@ def edit_comment_wrapper(comment_id):
     return edit_comment(comment_id)
 
 
-@news.route('/comment/delete/<comment_id>', methods=['PUT', 'POST'])
+@news.route('/<post_id>/comment/<comment_id>', methods=['DELETE'])
 @authorize('comment')
 def delete_comment_wrapper(comment_id):
     @handle_request_errors('Deleting comment \'{0}\''

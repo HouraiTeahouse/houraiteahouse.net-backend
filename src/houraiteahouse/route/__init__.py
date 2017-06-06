@@ -1,7 +1,7 @@
-from .auth_route import auth
-from .news_route import news
+from .auth_route import user
+from .news_route import news, tags
 
 blueprints = {
-    '/auth': auth,
+    '/user': auth,
     '/news': news
 }

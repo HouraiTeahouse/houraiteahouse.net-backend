@@ -9,10 +9,10 @@ from ..storage.models import db
 from . import request_util
 from .request_util import handle_request_errors
 
-auth = Blueprint('auth', __name__)
+user = Blueprint('auth', __name__)
 
 
-@auth.route('/register', methods=['POST'])
+@user.route('', methods=['POST'])
 @handle_request_errors('Registration')
 def register():
     json_data = request.data
@@ -34,7 +34,31 @@ def register():
     )
 
 
-@auth.route('/login', methods=['POST'])
+@user.route('', methods=['PUT'])
+@authenticate
+@handle_request_errors('Updating password')
+def change_password():
+    json_data = request.data
+
+    if auth_bl.change_password(
+        json_data['username'],
+        json_data['oldPassword'],
+        json_data['newPassword']
+    ):
+
+        return request_util.generate_success_response(
+            'Update successful',
+            'plain/text'
+        )
+
+    else:
+        return request_util.generate_error_response(
+            400,
+            'Current password is incorrect.'
+        )
+
+
+@user.route('/login', methods=['POST'])
 @handle_request_errors('Login')
 def login():
     json_data = request.data
@@ -59,7 +83,7 @@ def login():
     )
 
 
-@auth.route('/logout', methods=['POST'])
+@user.route('/logout', methods=['POST'])
 @authenticate
 @handle_request_errors('Logout')
 def logout():
@@ -73,7 +97,7 @@ def logout():
     )
 
 
-@auth.route('/status', methods=['GET'])
+@user.route('/status', methods=['GET'])
 @handle_request_errors('Fetching login status')
 def status():
     json_data = request.args
@@ -100,33 +124,10 @@ def status():
     )
 
 
-@auth.route('/update', methods=['POST'])
-@authenticate
-@handle_request_errors('Updating password')
-def change_password():
-    json_data = request.data
-
-    if auth_bl.change_password(
-        json_data['username'],
-        json_data['oldPassword'],
-        json_data['newPassword']
-    ):
-
-        return request_util.generate_success_response(
-            'Update successful',
-            'plain/text'
-        )
-
-    else:
-        return request_util.generate_error_response(
-            400,
-            'Current password is incorrect.'
-        )
-
 
 # Can only be used by True Administrators
 
-@auth.route('/permissions/<username>', methods=['GET'])
+@user.route('/<username>/permissions', methods=['GET'])
 @authorize('admin')
 @handle_request_errors('Loading user permissions')
 def get_user_permissions(username):
@@ -148,7 +149,7 @@ def get_user_permissions(username):
     )
 
 
-@auth.route('/permissions/<username>', methods=['POST', 'PUT'])
+@user.route('/<username>/permissions', methods=['POST', 'PUT'])
 @authorize('admin')
 @handle_request_errors('Updating user permissions')
 def set_user_permissions(username):

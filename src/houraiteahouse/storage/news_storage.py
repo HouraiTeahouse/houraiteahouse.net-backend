@@ -70,11 +70,9 @@ def post_news(title, body, tags, session_id, media=None,
               language=DEFAULT_LANGUAGE):
     lang = get_language(language)
 
-    tagObjs = list()
-    for tagName in tags:
-        tag = get_tag(tagName)
-        if tag:
-            tagObjs.append(tag)
+    tagObjs = [get_tag(name) for name in tags]
+    for name in tags:
+        print(name)
 
     author = auth.get_user_session(session_id).user
     if not author:
@@ -141,13 +139,15 @@ def translate_news(post_id, language, title, body):
 
 def get_tag(name):
     tag = models.NewsTag.get(name=name)
+    # print(tag)
     return tag or create_tag(name)
 
 
 def create_tag(name):
-    util.try_add(tag=models.NewsTag(name), logger=logger)
+    tag = models.NewsTag(name)
+    util.try_add(tag=tag, logger=logger)
     # It won't be in the cache yet, so we must actually load it.
-    return models.NewsTag.get(name=name)
+    return tag
 
 
 def post_comment(post_id, body, session_id):

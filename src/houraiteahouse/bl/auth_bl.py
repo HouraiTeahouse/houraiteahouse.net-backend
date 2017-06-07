@@ -2,6 +2,7 @@ from flask import request
 from functools import wraps
 from houraiteahouse.route import request_util
 from houraiteahouse.storage import auth_storage
+from werkzeug.exceptions import Unauthorized, Forbidden, InternalServerError
 
 
 # Signin/signout calls
@@ -45,10 +46,12 @@ def close_user_session(session_id):
 def change_password(username, old_password, new_password):
     user = auth_storage.get_user(username)
     if not authenticate_user(user, old_password):
-        return False
-    if auth_storage.update_password(user, new_password):
-        return True
-    raise Exception('Failed to update password.  Please try again later.')
+        raise Unauthorized()
+    try:
+        auth_storage.update_password(user, new_password)
+    except:
+        raise InternalServerError(
+                'Failed to update password.  Please try again later.')
 
 
 # Primary authN logic
@@ -62,12 +65,12 @@ def authentication_check(session_id):
     if session_id is None:
         return {'status': False}
     userSession = auth_storage.get_user_session(session_id)
-    if not(userSession and userSession.is_valid()):
+    if not(userSession and userSession.is_valid):
         return {'status': False}
     ret = {
         'status': True,
-        'permissions': userSession.get_user().get_permissions().__dict__,
-        'expiration': userSession.get_expiration()
+        'permissions': userSession.user.permissions.__dict__,
+        'expiration': userSession.expiration
     }
     ret['permissions'].pop('_sa_instance_state')
     return ret
@@ -82,10 +85,8 @@ def authenticate(func):
         if can_auth:
             flag = authentication_check(
                 request.data['session_id'])['status']
-
         if not flag:
-            raise PermissionError(
-                'You must be logged in to perform this action!')
+            raise Unauthorized('You must be logged in to perform this action.')
         return func(*args, **kwargs)
     return authenticate_and_call
 
@@ -96,9 +97,9 @@ def authorization_check(action_type, session_id):
     if session_id is None or action_type is None:
         return False
     userSession = auth_storage.get_user_session(session_id)
-    if userSession is None or not userSession.is_valid():
+    if userSession is None or not userSession.is_valid:
         return False
-    permissions = userSession.get_user().permissions.__dict__
+    permissions = userSession.user.permissions.__dict__
     # 'master' implies server & db access and thus always has permission
     return permissions['master'] or permissions[action_type]
 
@@ -113,7 +114,7 @@ def authorize(action_type):
             # The authenticate decorator has already guaranteed the request
             # data is present
             if not authorization_check(action_type, reqdat['session_id']):
-                raise PermissionError('You do not have permission to do this.')
+                raise Forbidden('You do not have permission to do this.')
             return func(*args, **kwargs)
         return authorize_and_call
     return authz_wrapper

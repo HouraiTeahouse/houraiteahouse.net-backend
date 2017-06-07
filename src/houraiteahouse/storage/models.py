@@ -6,6 +6,7 @@ from flask_cache import Cache
 from flask_sqlalchemy import SQLAlchemy
 from flask_sqlalchemy_cache import CachingQuery, FromCache
 from sqlalchemy.orm import backref
+from werkzeug.exceptions import NotFound
 
 bcrypt = Bcrypt()
 db = SQLAlchemy(session_options={'query_cls': CachingQuery})
@@ -52,7 +53,7 @@ class HouraiTeahouseModelMixin(object):
     def get_or_die(cls, *args, **kwargs):
         entity = cls.get(*args, **kwargs)
         if entity is None:
-            raise RuntimeError(
+            raise NotFound(
                 'Entity %s with parameters "%s, %s" cannot be found' %
                 (cls.__name__, args, kwargs))
         return entity
@@ -64,21 +65,12 @@ BaseMixin = IdMixin(db.Integer)
 class Language(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     __tablename__ = "languages"
 
-    _language_code = db.Column('language_code', db.String(10), nullable=False)
-    _language_name = db.Column('language_name', db.String(50))
+    language_code = db.Column('language_code', db.String(10), nullable=False)
+    language_name = db.Column('language_name', db.String(50))
 
     def __init__(self, code, name):
-        self._language_code = code
-        self._language_name = name
-
-    @property
-    def code(self):
-        return self.language_code
-
-    @property
-    def name(self):
-        return self.language_name
-
+        self.language_code = code
+        self.language_name = name
 
 # Sec 1: User AuthN & AuthZ
 
@@ -86,7 +78,7 @@ class Language(db.Model, HouraiTeahouseModelMixin, BaseMixin):
 class User(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     __tablename__ = "user"
 
-    _username = db.Column('username', db.String(64), nullable=False,
+    username = db.Column('username', db.String(64), nullable=False,
                           unique=True)
     email = db.Column(db.String(120), nullable=False, unique=True)
     password = db.Column(db.String(255), nullable=False)
@@ -100,7 +92,7 @@ class User(db.Model, HouraiTeahouseModelMixin, BaseMixin):
 
     def __init__(self, email, username, password, permissions):
         self.email = email
-        self._username = username
+        self.username = username
         self.password = bcrypt.generate_password_hash(password).decode('utf-8')
         self.permissions = permissions
         self.registered_on = datetime.utcnow()
@@ -116,10 +108,6 @@ class User(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     def is_active(self):
         return True
 
-    @property
-    def username(self):
-        return self._username
-
     def __repr__(self):
         return '<User {0}>'.format(self.username)
 
@@ -129,12 +117,13 @@ class User(db.Model, HouraiTeahouseModelMixin, BaseMixin):
 class UserSession(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     __tablename__ = "sessions"
 
-    _session_uuid = db.Column('session_uuid', db.String(36), nullable=False,
+    session_uuid = db.Column('session_uuid', db.String(36), nullable=False,
                               unique=True)
-    valid_after = db.Column('valid_after', db.DateTime, nullable=False)
-    valid_before = db.Column('valid_before', db.DateTime, nullable=True)
-    _user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    _user = db.relationship('User', backref=db.backref('session',
+    valid_after = db.Column(db.DateTime, nullable=False)
+    valid_before = db.Column(db.DateTime, nullable=True)
+    user_id = db.Column('user_id', db.Integer, db.ForeignKey('user.id'),
+                         nullable=False)
+    user = db.relationship('User', backref=db.backref('session',
                                                        lazy='dynamic'))
 
     def __init__(self, user, remember_me=False):
@@ -157,14 +146,6 @@ class UserSession(db.Model, HouraiTeahouseModelMixin, BaseMixin):
         if self.valid_before is not None and self.valid_before < now:
             return False
         return self.valid_after < now
-
-    @property
-    def user(self):
-        return self._user
-
-    @property
-    def uuid(self):
-        return self._session_uuid
 
     def __repr__(self):
         return '<UserSession {0}>'.format(self._session_uuid)
@@ -266,7 +247,7 @@ class NewsPost(db.Model, HouraiTeahouseModelMixin, BaseMixin):
 class NewsTitle(db.Model, HouraiTeahouseModelMixin):
     __tablename__ = "newstitle"
 
-    _id = db.Column(
+    id = db.Column(
         db.Integer,
         db.ForeignKey('news.id'),
         nullable=False,
@@ -281,10 +262,6 @@ class NewsTitle(db.Model, HouraiTeahouseModelMixin):
     language = db.relationship('Language',
                                backref=db.backref('newstitle', lazy='dynamic'))
     localized_title = db.Column(db.String(1000))
-
-    @property
-    def id(self):
-        return self._id
 
     def __init__(self, news, language, title):
         self.news = news
@@ -319,7 +296,7 @@ class NewsComment(db.Model, HouraiTeahouseModelMixin, BaseMixin):
         db.Integer,
         db.ForeignKey('user.id'),
         nullable=False)
-    _author = db.relationship('User', backref=db.backref('newscomment',
+    author = db.relationship('User', backref=db.backref('newscomment',
                                                          lazy='dynamic'))
     news_id = db.Column(
         db.Integer,
@@ -332,7 +309,3 @@ class NewsComment(db.Model, HouraiTeahouseModelMixin, BaseMixin):
         self.body = body
         self._author = author
         self.news = news
-
-    @property
-    def author(self):
-        return self._author

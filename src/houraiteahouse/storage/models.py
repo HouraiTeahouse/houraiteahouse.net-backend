@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from flask_bcrypt import Bcrypt
 from flask_cache import Cache
 from flask_sqlalchemy import SQLAlchemy
-from flask_sqlalchemy_cache import CachingQuery
+from flask_sqlalchemy_cache import CachingQuery, FromCache
 from sqlalchemy.orm import backref
 
 bcrypt = Bcrypt()
@@ -30,36 +30,64 @@ tags = db.Table(
         nullable=False))
 
 
+def IdMixin(id_type=db.Integer):
+    class _IdMixin(object):
+        _id = db.Column('id', id_type, primary_key=True, autoincrement=True)
+
+        @property
+        def id(self):
+            return self._id
+
+    return _IdMixin
+
+
+class HouraiTeahouseModel(db.Model):
+
+    @classmethod
+    def get(cls, *args, **kwargs):
+        return cls.query.filter_by(*args, **kwargs).options(
+            FromCache(cache)).first()
+
+    @classmethod
+    def get_or_die(cls, *args, **kwargs):
+        entity = cls.get(*args, **kwargs)
+        if entity is None:
+            raise RuntimeError(
+                'Entity %s with parameters "%s, %s" cannot be found' %
+                (cls.__name__, args, kwargs))
+        return entity
+
+BaseMixin = IdMixin(db.Integer)
+
+
 # Language codes
-class Language(db.Model):
+class Language(HouraiTeahouseModel, BaseMixin):
     __tablename__ = "languages"
 
-    language_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    language_code = db.Column(db.String(10), nullable=False)
-    language_name = db.Column(db.String(50))
+    _language_code = db.Column('language_code', db.String(10), nullable=False)
+    _language_name = db.Column('language_name', db.String(50))
 
     def __init__(self, code, name):
-        self.language_code = code
-        self.language_name = name
+        self._language_code = code
+        self._language_name = name
 
-    def get_id(self):
-        return self.language_id
-
-    def get_language_code(self):
+    @property
+    def code(self):
         return self.language_code
 
-    def get_language_name(self):
+    @property
+    def name(self):
         return self.language_name
 
 
 # Sec 1: User AuthN & AuthZ
 
 # User authN & metadata
-class User(db.Model):
+class User(HouraiTeahouseModel, BaseMixin):
     __tablename__ = "user"
 
-    user_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    username = db.Column(db.String(64), nullable=False, unique=True)
+    _username = db.Column('username', db.String(64), nullable=False,
+                          unique=True)
     email = db.Column(db.String(120), nullable=False, unique=True)
     password = db.Column(db.String(255), nullable=False)
     registered_on = db.Column(db.DateTime, nullable=False)
@@ -84,17 +112,17 @@ class User(db.Model):
         return bcrypt.check_password_hash(
             self.password.encode('utf-8'), password)
 
+    @property
     def is_active(self):
         return True
 
-    def get_id(self):
-        return self.user_id
-
-    def get_permissions(self):
+    @property
+    def permissions(self):
         return self.permissions
 
-    def get_username(self):
-        return self.username
+    @property
+    def username(self):
+        return self._username
 
     def __repr__(self):
         return '<User {0}>'.format(self.username)
@@ -102,18 +130,18 @@ class User(db.Model):
 # Session tracking
 
 
-class UserSession(db.Model):
+class UserSession(HouraiTeahouseModel, BaseMixin):
     __tablename__ = "sessions"
 
-    session_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    session_uuid = db.Column(db.String(36), nullable=False, unique=True)
-    valid_after = db.Column(db.DateTime, nullable=False)
-    valid_before = db.Column(db.DateTime, nullable=True)
-    user_id = db.Column(
+    _session_uuid = db.Column('session_uuid', db.String(36), nullable=False,
+                              unique=True)
+    _valid_after = db.Column('valid_after', db.DateTime, nullable=False)
+    _valid_before = db.Column('valid_before', db.DateTime, nullable=True)
+    _user_id = db.Column(
         db.Integer,
         db.ForeignKey('user.user_id'),
         nullable=False)
-    user = db.relationship(
+    _user = db.relationship(
         'User', backref=db.backref(
             'session', lazy='dynamic'))
 
@@ -126,38 +154,35 @@ class UserSession(db.Model):
         else:
             self.valid_before = datetime.utcnow() + timedelta(days=1)
 
-    def get_expiration(self):
+    @property
+    def expiration(self):
         return None if self.valid_before is None else int(
             time.mktime(self.valid_before.timetuple())) * 1000
 
+    @property
     def is_valid(self):
         now = datetime.utcnow()
         if self.valid_before is not None and self.valid_before < now:
             return False
         return self.valid_after < now
 
-    def get_user(self):
-        return self.user
+    @property
+    def user(self):
+        return self._user
 
-    def get_id(self):
-        return self.session_id
-
-    def get_uuid(self):
-        return self.session_uuid
+    @property
+    def uuid(self):
+        return self._session_uuid
 
     def __repr__(self):
-        return '<UserSession {0}>'.format(self.session_uuid)
+        return '<UserSession {0}>'.format(self._session_uuid)
 
 # User authZ
 
 
-class UserPermissions(db.Model):
+class UserPermissions(HouraiTeahouseModel, BaseMixin):
     __tablename__ = "permissions"
 
-    permissions_id = db.Column(
-        db.Integer,
-        primary_key=True,
-        autoincrement=True)
     # Someone with host & DB access. admins cannot change a master's
     # permissions. This can only be set manually.  Equivalent of "webmaster"
     master = db.Column(db.Boolean, nullable=False, default=False)
@@ -190,8 +215,12 @@ class UserPermissions(db.Model):
         self.news = news
         self.comment = comment
 
-    def get_id(self):
-        return self.permissions_id
+    @property
+    def is_super_user(self):
+        return self.admin or self.master
+
+    def check_permission(self, permission):
+        return self.is_super_user or getattr(self, permission, False)
 
     def update_permissions(self, newPermissions):
         for permType, value in newPermissions.items():
@@ -204,10 +233,9 @@ class UserPermissions(db.Model):
 # Sec 2: News, tags, comments
 
 # A news post.
-class NewsPost(db.Model):
+class NewsPost(HouraiTeahouseModel, BaseMixin):
     __tablename__ = "news"
 
-    post_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     post_short = db.Column(db.String(64), nullable=False, unique=True)
     title = db.Column(db.String(1000), nullable=False, unique=True)
     # If someone tries to post a media URL > 1024 chars I will end them
@@ -232,9 +260,6 @@ class NewsPost(db.Model):
         self.tags = tags
         self.media = media
 
-    def get_id(self):
-        return self.post_id
-
     def get_short(self):
         return self.post_short
 
@@ -246,10 +271,10 @@ class NewsPost(db.Model):
 
 
 # Localized news titles. Many-to-one.
-class NewsTitle(db.Model):
+class NewsTitle(HouraiTeahouseModel):
     __tablename__ = "newstitle"
 
-    news_id = db.Column(
+    _id = db.Column(
         db.Integer,
         db.ForeignKey('news.post_id'),
         nullable=False,
@@ -265,6 +290,10 @@ class NewsTitle(db.Model):
                                backref=db.backref('newstitle', lazy='dynamic'))
     localized_title = db.Column(db.String(1000))
 
+    @property
+    def id(self):
+        return self._id
+
     def __init__(self, news, language, title):
         self.news = news
         self.language = language
@@ -275,36 +304,31 @@ class NewsTitle(db.Model):
 
 
 # Tags for news. Many-to-many.
-class NewsTag(db.Model):
+class NewsTag(HouraiTeahouseModel, BaseMixin):
     __tablename__ = "newstag"
 
-    tag_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(64), nullable=False, unique=True)
     news = db.relationship('NewsPost', secondary=tags, back_populates="tags")
 
     def __init__(self, name):
         self.name = name
 
-    def get_id(self):
-        return self.tag_id
-
     def __repr__(self):
         return '<NewsTag {0}>'.format(self.name)
 
 
 # Comments on a news post.  Many-to-one.
-class NewsComment(db.Model):
+class NewsComment(HouraiTeahouseModel, BaseMixin):
     __tablename__ = "newscomment"
 
-    comment_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     # Don't ask about the exact #. It's a mysql bug.
     body = db.Column(db.String(10000), nullable=False)
     author_id = db.Column(
         db.Integer,
         db.ForeignKey('user.user_id'),
         nullable=False)
-    author = db.relationship('User',
-                             backref=db.backref('newscomment', lazy='dynamic'))
+    _author = db.relationship('User', backref=db.backref('newscomment',
+                                                         lazy='dynamic'))
     news_id = db.Column(
         db.Integer,
         db.ForeignKey('news.post_id'),
@@ -314,11 +338,9 @@ class NewsComment(db.Model):
 
     def __init__(self, body, author, news):
         self.body = body
-        self.author = author
+        self._author = author
         self.news = news
 
-    def get_id(self):
-        return self.comment_id
-
-    def get_author(self):
-        return self.author
+    @property
+    def author(self):
+        return self._author

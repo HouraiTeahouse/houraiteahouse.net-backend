@@ -16,12 +16,12 @@ manager.add_command('db', MigrateCommand)
 
 @manager.command
 def create_db():
-  db.create_all()
+    db.create_all()
 
 
 @manager.command
 def drop_db():
-  db.drop_all()
+    db.drop_all()
 
 
 @manager.command
@@ -42,16 +42,16 @@ def routes():
 
 @manager.command
 def create_admin():
-  # Temporary for initialization - as part of this, connect to the DB &
-  # create a real admin
-  db.session.add(User(email='ad@min', password='admin', admin=True))
-  db.session.commit()
+    # Temporary for initialization - as part of this, connect to the DB &
+    # create a real admin
+    db.session.add(User(email='ad@min', password='admin', admin=True))
+    db.session.commit()
 
 
 @manager.command
 def create_data():
-  pass
+    pass
 
 
 if __name__ == '__main__':
-  manager.run()
+    manager.run()

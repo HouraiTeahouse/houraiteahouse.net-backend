@@ -34,7 +34,7 @@ def start_user_session(username, password, remember_me):
 def get_user_for_session(session_id):
     userSession = auth_storage.get_user_session(session_id)
     if userSession is None or not userSession.is_valid():
-        raise Exception('User is not logged in!')
+        raise PermissionError('User is not logged in!')
     return userSession.get_user()
 
 
@@ -84,8 +84,8 @@ def authenticate(func):
                 request.data['session_id'])['status']
 
         if not flag:
-            return request_util.generate_error_response(
-                403, 'You must be logged in to perform this action!')
+            raise PermissionError(
+                'You must be logged in to perform this action!')
         return func(*args, **kwargs)
     return authenticate_and_call
 
@@ -113,8 +113,7 @@ def authorize(action_type):
             # The authenticate decorator has already guaranteed the request
             # data is present
             if not authorization_check(action_type, reqdat['session_id']):
-                return request_util.generate_error_response(
-                    403, 'You do not have permission to do this.')
+                raise PermissionError('You do not have permission to do this.')
             return func(*args, **kwargs)
         return authorize_and_call
     return authz_wrapper

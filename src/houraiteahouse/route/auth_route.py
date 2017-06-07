@@ -1,6 +1,7 @@
 import json
 import logging
 from flask import request, Blueprint
+from sqlalchemy.exc import IntegrityError
 from ..common import bcrypt
 from ..bl import auth_bl
 from ..bl.auth_bl import authenticate, authorize
@@ -17,21 +18,14 @@ auth = Blueprint('auth', __name__)
 def register():
     json_data = request.data
 
-    if auth_storage.create_user(
-        json_data['email'],
-        json_data['username'],
-        json_data['password']
-    ):
-
-        return request_util.generate_success_response(
-            'success',
-            'plain/text'
+    try:
+        auth_storage.create_user(json_data['email'], json_data['username'],
+                                 json_data['password'])
+    except IntegrityError:
+        return request_util.generate_error_response(400,
+            'A user with this name or email already exists.'
         )
-
-    return request_util.generate_error_response(
-        400,
-        'A user with this name or email already exists.'
-    )
+    return request_util.generate_success_response('success', 'plain/text')
 
 
 @auth.route('/login', methods=['POST'])

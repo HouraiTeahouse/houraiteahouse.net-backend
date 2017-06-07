@@ -6,7 +6,7 @@ def try_action(action):
     db_action = getattr(db.session, action)
 
     def try_action(**kwargs):
-        for name, value in kwargs.iter():
+        for name, value in kwargs.items():
             try:
                 if name == 'logger':
                     continue

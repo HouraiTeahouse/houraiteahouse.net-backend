@@ -41,7 +41,7 @@ def IdMixin(id_type=db.Integer):
     return _IdMixin
 
 
-class HouraiTeahouseModel(db.Model):
+class HouraiTeahouseModelMixin(object):
 
     @classmethod
     def get(cls, *args, **kwargs):
@@ -61,7 +61,7 @@ BaseMixin = IdMixin(db.Integer)
 
 
 # Language codes
-class Language(HouraiTeahouseModel, BaseMixin):
+class Language(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     __tablename__ = "languages"
 
     _language_code = db.Column('language_code', db.String(10), nullable=False)
@@ -83,7 +83,7 @@ class Language(HouraiTeahouseModel, BaseMixin):
 # Sec 1: User AuthN & AuthZ
 
 # User authN & metadata
-class User(HouraiTeahouseModel, BaseMixin):
+class User(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     __tablename__ = "user"
 
     _username = db.Column('username', db.String(64), nullable=False,
@@ -130,7 +130,7 @@ class User(HouraiTeahouseModel, BaseMixin):
 # Session tracking
 
 
-class UserSession(HouraiTeahouseModel, BaseMixin):
+class UserSession(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     __tablename__ = "sessions"
 
     _session_uuid = db.Column('session_uuid', db.String(36), nullable=False,
@@ -180,7 +180,7 @@ class UserSession(HouraiTeahouseModel, BaseMixin):
 # User authZ
 
 
-class UserPermissions(HouraiTeahouseModel, BaseMixin):
+class UserPermissions(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     __tablename__ = "permissions"
 
     # Someone with host & DB access. admins cannot change a master's
@@ -233,7 +233,7 @@ class UserPermissions(HouraiTeahouseModel, BaseMixin):
 # Sec 2: News, tags, comments
 
 # A news post.
-class NewsPost(HouraiTeahouseModel, BaseMixin):
+class NewsPost(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     __tablename__ = "news"
 
     post_short = db.Column(db.String(64), nullable=False, unique=True)
@@ -271,7 +271,7 @@ class NewsPost(HouraiTeahouseModel, BaseMixin):
 
 
 # Localized news titles. Many-to-one.
-class NewsTitle(HouraiTeahouseModel):
+class NewsTitle(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     __tablename__ = "newstitle"
 
     _id = db.Column(
@@ -304,7 +304,7 @@ class NewsTitle(HouraiTeahouseModel):
 
 
 # Tags for news. Many-to-many.
-class NewsTag(HouraiTeahouseModel, BaseMixin):
+class NewsTag(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     __tablename__ = "newstag"
 
     name = db.Column(db.String(64), nullable=False, unique=True)
@@ -318,7 +318,7 @@ class NewsTag(HouraiTeahouseModel, BaseMixin):
 
 
 # Comments on a news post.  Many-to-one.
-class NewsComment(HouraiTeahouseModel, BaseMixin):
+class NewsComment(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     __tablename__ = "newscomment"
 
     # Don't ask about the exact #. It's a mysql bug.

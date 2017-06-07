@@ -15,9 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 def new_user_session(user, remember_me):
-    userSession = models.UserSession(user, remember_me)
-    session = Session.object_session(userSession)
-    uuid = userSession.uuid
+    user_session = models.UserSession(user, remember_me)
+    uuid = user_session.session_uuid
     util.try_add(session=user_session, logger=logger)
     return get_user_session(uuid)
 
@@ -28,10 +27,10 @@ def get_user_session(session_uuid):
 
 def close_user_session(session_uuid):
     user_session = get_user_session(session_uuid)
-    if not userSession:
+    if not user_session:
         return
-    userSession.valid_before = datetime.utcnow()
-    db.session.merge(userSession)
+    user_session.valid_before = datetime.utcnow()
+    db.session.merge(user_session)
     db.session.commit()
 
 
@@ -56,24 +55,24 @@ def get_permissions_by_username(username):
 def set_permissions_by_username(username, permissions, session_uuid):
     callerPermissions = get_user_session(session_uuid).user.permissions
 
+    error = Forbidden('You do not have the permissions to do this.')
+
     if not callerPermissions.master:
         if not callerPermissions.admin:
             # If you're not a master or admin you can't touch this.
-            return False
+            raise error
         if permissions['admin']:
             # You MUST be a master to promote admins
-            return False
+            raise error
 
     permissionsObj = get_permissions_by_username(username)
 
     if permissionsObj.master:
         # This user's permissions cannot be set through calls!
-        return False
+        raise error
 
     permissionsObj.update_permissions(permissions)
-
-    db.session.merge(permissionsObj)
-    db.session.commit()
+    util.try_merge(permissionsObj)
 
 
 def create_user(email, username, password):

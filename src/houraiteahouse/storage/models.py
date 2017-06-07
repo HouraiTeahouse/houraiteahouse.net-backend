@@ -21,12 +21,12 @@ tags = db.Table(
     db.Column(
         'tag_id',
         db.Integer,
-        db.ForeignKey('newstag.tag_id'),
+        db.ForeignKey('newstag.id'),
         nullable=False),
     db.Column(
         'news_id',
         db.Integer,
-        db.ForeignKey('news.post_id'),
+        db.ForeignKey('news.id'),
         nullable=False))
 
 
@@ -92,7 +92,7 @@ class User(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     password = db.Column(db.String(255), nullable=False)
     registered_on = db.Column(db.DateTime, nullable=False)
     permissions_id = db.Column(db.Integer, db.ForeignKey(
-        'permissions.permissions_id'), nullable=False)
+        'permissions.id'), nullable=False)
     permissions = db.relationship(
         'UserPermissions', backref=db.backref(
             'user', lazy='dynamic'))
@@ -100,7 +100,7 @@ class User(db.Model, HouraiTeahouseModelMixin, BaseMixin):
 
     def __init__(self, email, username, password, permissions):
         self.email = email
-        self.username = username
+        self._username = username
         self.password = bcrypt.generate_password_hash(password).decode('utf-8')
         self.permissions = permissions
         self.registered_on = datetime.utcnow()
@@ -117,10 +117,6 @@ class User(db.Model, HouraiTeahouseModelMixin, BaseMixin):
         return True
 
     @property
-    def permissions(self):
-        return self.permissions
-
-    @property
     def username(self):
         return self._username
 
@@ -135,15 +131,11 @@ class UserSession(db.Model, HouraiTeahouseModelMixin, BaseMixin):
 
     _session_uuid = db.Column('session_uuid', db.String(36), nullable=False,
                               unique=True)
-    _valid_after = db.Column('valid_after', db.DateTime, nullable=False)
-    _valid_before = db.Column('valid_before', db.DateTime, nullable=True)
-    _user_id = db.Column(
-        db.Integer,
-        db.ForeignKey('user.user_id'),
-        nullable=False)
-    _user = db.relationship(
-        'User', backref=db.backref(
-            'session', lazy='dynamic'))
+    valid_after = db.Column('valid_after', db.DateTime, nullable=False)
+    valid_before = db.Column('valid_before', db.DateTime, nullable=True)
+    _user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    _user = db.relationship('User', backref=db.backref('session',
+                                                       lazy='dynamic'))
 
     def __init__(self, user, remember_me=False):
         self.user = user
@@ -242,7 +234,7 @@ class NewsPost(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     media = db.Column(db.String(1024))
     author_id = db.Column(
         db.Integer,
-        db.ForeignKey('user.user_id'),
+        db.ForeignKey('user.id'),
         nullable=False)
     created = db.Column(db.DateTime, nullable=False)
     author = db.relationship('User',
@@ -271,19 +263,19 @@ class NewsPost(db.Model, HouraiTeahouseModelMixin, BaseMixin):
 
 
 # Localized news titles. Many-to-one.
-class NewsTitle(db.Model, HouraiTeahouseModelMixin, BaseMixin):
+class NewsTitle(db.Model, HouraiTeahouseModelMixin):
     __tablename__ = "newstitle"
 
     _id = db.Column(
         db.Integer,
-        db.ForeignKey('news.post_id'),
+        db.ForeignKey('news.id'),
         nullable=False,
         primary_key=True)
     news = db.relationship('NewsPost',
                            backref=db.backref('newstitle', lazy='dynamic'))
     language_id = db.Column(
         db.Integer,
-        db.ForeignKey('languages.language_id'),
+        db.ForeignKey('languages.id'),
         nullable=False,
         primary_key=True)
     language = db.relationship('Language',
@@ -325,13 +317,13 @@ class NewsComment(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     body = db.Column(db.String(10000), nullable=False)
     author_id = db.Column(
         db.Integer,
-        db.ForeignKey('user.user_id'),
+        db.ForeignKey('user.id'),
         nullable=False)
     _author = db.relationship('User', backref=db.backref('newscomment',
                                                          lazy='dynamic'))
     news_id = db.Column(
         db.Integer,
-        db.ForeignKey('news.post_id'),
+        db.ForeignKey('news.id'),
         nullable=False)
     news = db.relationship('NewsPost',
                            backref=db.backref('newscomment', lazy='dynamic'))

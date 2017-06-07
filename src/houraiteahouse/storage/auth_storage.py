@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def new_user_session(user, remember_me):
     userSession = models.UserSession(user, remember_me)
     session = Session.object_session(userSession)
-    uuid = userSession.get_uuid()
+    uuid = userSession.uuid
     util.try_add(session=user_session, logger=logger)
     return get_user_session(uuid)
 
@@ -44,7 +44,7 @@ def get_user_by_id(userId):
 
 
 def get_permissions_by_username(username):
-    user = get_user(username).get_permissions()
+    user = get_user(username).permissions
     if permissions is not None:
         permissions = permissions.__dict__
         permissions.pop('_sa_instance_state')
@@ -54,7 +54,7 @@ def get_permissions_by_username(username):
 
 
 def set_permissions_by_username(username, permissions, session_uuid):
-    callerPermissions = get_user_session(session_uuid).user.get_permissions()
+    callerPermissions = get_user_session(session_uuid).user.permissions
 
     if not callerPermissions.master:
         if not callerPermissions.admin:

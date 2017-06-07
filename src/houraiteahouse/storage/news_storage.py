@@ -3,10 +3,10 @@ import logging
 import os
 from datetime import datetime
 from flask_sqlalchemy_cache import FromCache
+from houraiteahouse.storage import auth_storage as auth
+from houraiteahouse.storage import storage_util as util
+from houraiteahouse.storage import models
 from houraiteahouse.storage.models import db, cache
-import houraiteahouse.storage.auth_storage as auth
-import houraiteahouse.storage.storage_util as util
-from . import models
 
 logger = logging.getLogger(__name__)
 

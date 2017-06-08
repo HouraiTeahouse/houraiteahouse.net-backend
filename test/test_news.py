@@ -1,4 +1,3 @@
-import json
 import unittest
 from unittest.mock import mock_open, patch
 from test_util import HouraiTeahouseTestCase
@@ -12,7 +11,6 @@ class NewsTest(HouraiTeahouseTestCase):
     def setUp(self):
         HouraiTeahouseTestCase.setUp(self)
         self.session = self.register_and_login(USERNAME, 'password')
-        print(self.session)
         lang = Language('en_US', 'English')
         db.session.add(lang)
         db.session.commit()
@@ -27,13 +25,8 @@ class NewsTest(HouraiTeahouseTestCase):
                 'james', 'mountain dew', 'local man'
             ]
         }
-        if session_id is not None:
-            data['session_id'] = session_id
         with patch('builtins.open', m, create=True):
-            return self.client.post(
-                '/news/post',
-                content_type='application/json',
-                data=json.dumps(data))
+            return self.post('/news/post', session=session_id, data=data)
 
     def test_list_fails_without_language(self):
         response = self.client.get('/news/list')
@@ -74,59 +67,53 @@ class NewsTest(HouraiTeahouseTestCase):
 
     def test_edit_fails_on_missing_post(self):
         self.adminify(USERNAME)
-        response = self.client.post(
+        response = self.post(
             '/news/edit/1',
-            content_type='application/json',
-            data=json.dumps({
-                'session_id': self.session,
+            session=self.session,
+            data={
                 'title': 'Local Man Drinks Mountain Dew',
                 'body': 'Test post pls ignore',
                 'tags': [
                     'james', 'mountain dew', 'florida man'
                 ]
-            }))
+            })
         self.assert404(response)
 
     def test_edit_requires_authentication(self):
-        response = self.client.post(
+        response = self.post(
             '/news/edit/1',
-            content_type='application/json',
-            data=json.dumps({
+            data={
                 'title': 'Local Man Drinks Mountain Dew',
                 'body': 'Test post pls ignore',
                 'tags': [
                     'james', 'mountain dew', 'florida man'
                 ]
-            }))
+            })
         self.assert401(response)
 
     def test_edit_requires_authorization(self):
-        response = self.client.post(
+        response = self.post(
             '/news/edit/1',
-            content_type='application/json',
-            data=json.dumps({
-                'session_id': self.session,
+            session=self.session,
+            data={
                 'title': 'Local Man Drinks Mountain Dew',
                 'body': 'Test post pls ignore',
                 'tags': [
                     'james', 'mountain dew', 'florida man'
                 ]
-            }))
-        self.assert403(response)
-
-    def test_translate_requires_authorization(self):
-        response = self.client.post('/news/translate/1', data={
-            'session_id': self.session
-           })
+            })
         self.assert403(response)
 
     def test_translate_requires_authentication(self):
-        response = self.client.post('/news/translate/1', data={})
+        response = self.post('/news/translate/1')
         self.assert401(response)
 
+    def test_translate_requires_authorization(self):
+        response = self.post('/news/translate/1', session=self.session)
+        self.assert403(response)
+
     def test_comment_post_fails_on_missing_post(self):
-        response = self.client.post('/news/comment/post/1', data={
-            'session_id': self.session,
+        response = self.post('/news/comment/post/1', session=self.session, data={
             'body': 'Hello World'
         })
         self.assert404(response)

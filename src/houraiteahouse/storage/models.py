@@ -33,10 +33,10 @@ tags = db.Table(
 
 def IdMixin(id_type=db.Integer):
     class _IdMixin(object):
-        _id = db.Column('id', id_type, primary_key=True, autoincrement=True)
+        id = db.Column('id', id_type, primary_key=True, autoincrement=True)
 
         @property
-        def id(self):
+        def obj_id(self):
             return self._id
 
     return _IdMixin
@@ -134,6 +134,12 @@ class UserSession(db.Model, HouraiTeahouseModelMixin, BaseMixin):
             self.valid_before = None
         else:
             self.valid_before = datetime.utcnow() + timedelta(days=1)
+
+    def get_uuid(self):
+        return self.session_uuid
+
+    def get_user(self):
+        return self.user
 
     @property
     def expiration(self):

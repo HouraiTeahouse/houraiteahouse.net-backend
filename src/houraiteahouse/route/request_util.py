@@ -23,7 +23,8 @@ def generate_error_response(status, responseText):
         status,
         json.dumps(
             {
-                'message': responseText
+                'message': responseText,
+                'error': status
             }
         ),
         'application/json'

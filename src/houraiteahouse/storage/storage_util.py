@@ -18,7 +18,7 @@ def try_action(action):
                 if 'logger' in kwargs:
                     logger = kwargs['logger']
                 logger.exception('Failed to {} {}: {}'.format(action, name,
-                    error))
+                                                              error))
                 db.session.close()
                 raise
     return try_action

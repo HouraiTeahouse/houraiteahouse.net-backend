@@ -154,6 +154,7 @@ def edit_comment(comment_id):
         'application/json'
     )
 
+
 @news.route('/comment/delete/<comment_id>', methods=['PUT', 'POST'])
 @authorize('comment')
 def delete_comment(comment_id):

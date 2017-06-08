@@ -12,6 +12,7 @@ class BaseConfig(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = 'secret_key'
     SQLALCHEMY_DATABASE_URI = 'sqlite://'
+    CACHE_TYPE = 'simple'
 
 
 # Config used for local development testing

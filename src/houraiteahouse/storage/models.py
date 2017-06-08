@@ -2,7 +2,7 @@ import time
 import uuid
 from datetime import datetime, timedelta
 from flask_bcrypt import Bcrypt
-from flask_cache import Cache
+from flask_caching import Cache
 from flask_sqlalchemy import SQLAlchemy
 from flask_sqlalchemy_cache import CachingQuery, FromCache
 from sqlalchemy.orm import backref

@@ -41,7 +41,7 @@ def open_news_file(postId, language=DEFAULT_LANGUAGE, filemode='r'):
 
 
 def tagged_news(tag, language=DEFAULT_LANGUAGE):
-    tag = models.NewsTag.get(name=tag)
+    tag = models.NewsTag.get_or_die(name=tag)
     if tag is None or tag.news is None:
         return None
     return [news_to_dict(post, language=language) for post in tag.news]

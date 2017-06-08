@@ -25,27 +25,21 @@ def register():
     return request_util.generate_success_response('success', 'plain/text')
 
 
-@user.route('', methods=['PUT'])
+@user.route('/<username>', methods=['PUT'])
 @authenticate
-def change_password():
-    json_data = request.data
+def change_password(username):
+    json_data = request.json
 
-    if auth_bl.change_password(
-        json_data['username'],
+    auth_bl.change_password(
+        username,
         json_data['oldPassword'],
         json_data['newPassword']
-    ):
+    )
 
-        return request_util.generate_success_response(
-            'Update successful',
-            'plain/text'
-        )
-
-    else:
-        return request_util.generate_error_response(
-            400,
-            'Current password is incorrect.'
-        )
+    return request_util.generate_success_response(
+        'Update successful',
+        'plain/text'
+    )
 
 
 @user.route('/login', methods=['POST'])

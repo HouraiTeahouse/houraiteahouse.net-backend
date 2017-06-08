@@ -30,7 +30,7 @@ def get_language(language=DEFAULT_LANGUAGE):
 def list_news(language=DEFAULT_LANGUAGE):
     news = models.NewsPost.query.order_by(models.NewsPost.created.desc()) \
         .options(FromCache(cache)).all()
-    if not news:
+    if news is None:
         return None
     return [news_to_dict(post, language=language) for post in news]
 
@@ -42,18 +42,15 @@ def open_news_file(postId, language=DEFAULT_LANGUAGE, filemode='r'):
 
 def tagged_news(tag, language=DEFAULT_LANGUAGE):
     tag = models.NewsTag.get(name=tag)
-    if not tag or not tag.news:
+    if tag is None or tag.news is None:
         return None
-    return [news_to_dict(post, language=language) for post in news]
+    return [news_to_dict(post, language=language) for post in tag.news]
 
 
 # "postId" is a misnomer, it's actually the short title
 # (ie, [date]-shortened-title)
 def get_news(postId, session_id, language=DEFAULT_LANGUAGE):
-    news = models.NewsPost.get(post_short=postId)
-    if not news:
-        return None
-
+    news = models.NewsPost.get_or_die(post_short=postId)
     caller = None
     if session_id:
         caller = auth.get_user_session(session_id).user
@@ -97,7 +94,7 @@ def edit_news(post_id, title, body, session_id, media,
     news = models.NewsPost.get_or_die(post_short=post_id)
     caller = auth.get_user_session(session_id).user
     if caller != news.author:
-        raise PermissionError
+        raise Forbidden
 
     body = sanitize_body(body)
 

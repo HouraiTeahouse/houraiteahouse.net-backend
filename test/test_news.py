@@ -32,9 +32,9 @@ class NewsTest(HouraiTeahouseTestCase):
         response = self.client.get('/news/list')
         self.assert400(response)
 
-    def test_list_fails_on_empty_news(self):
+    def test_list_doesnt_fail_on_empty_news(self):
         response = self.client.get('/news/list?language=en_US')
-        self.assert404(response)
+        self.assert200(response)
 
     def test_tag_fails_on_empty_tag(self):
         response = self.client.get('/news/tag/test')
@@ -67,7 +67,7 @@ class NewsTest(HouraiTeahouseTestCase):
 
     def test_edit_fails_on_missing_post(self):
         self.adminify(USERNAME)
-        response = self.post(
+        response = self.put(
             '/news/edit/1',
             session=self.session,
             data={
@@ -80,7 +80,7 @@ class NewsTest(HouraiTeahouseTestCase):
         self.assert404(response)
 
     def test_edit_requires_authentication(self):
-        response = self.post(
+        response = self.put(
             '/news/edit/1',
             data={
                 'title': 'Local Man Drinks Mountain Dew',
@@ -92,7 +92,7 @@ class NewsTest(HouraiTeahouseTestCase):
         self.assert401(response)
 
     def test_edit_requires_authorization(self):
-        response = self.post(
+        response = self.put(
             '/news/edit/1',
             session=self.session,
             data={

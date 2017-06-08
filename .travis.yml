@@ -3,7 +3,7 @@ python:
   - "3.5"
 env:
   global:
-    - PYTHONPATH="/home/travis/build/HouraiTeahouse/houraiteahouse.net-backend/src"
+    - PYTHONPATH="$TRAVIS_BUILD_DIR/src:$TRAVIS_BUILD_DIR/test"
 install:
   # install dependencies
   - pip install -r requirements.txt
@@ -11,11 +11,13 @@ install:
   - pip install coverage
   - pip install coveralls
   - pip install pep8
+  - pip install nose
 script:
   # PEP8 Style Checks
   - pep8 --show-source src/ test/
   # Run tests and collect coverage information
-  - coverage run --source=src/houraiteahouse -m unittest discover -v -s test
+  - nosetests --with-coverage --cover-package=houraiteahouse --cover-html
+  #- coverage run --source=src/houraiteahouse -m unittest discover -v -s test
 cache: pip
 after_success:
   coveralls

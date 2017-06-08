@@ -113,10 +113,10 @@ class NewsTest(HouraiTeahouseTestCase):
         self.assert403(response)
 
     def test_comment_post_fails_on_missing_post(self):
-        response = self.post('/news/comment/post/1', session=self.session, data={
-            'body': 'Hello World'
-        })
+        response = self.post('/news/comment/post/1', session=self.session,
+                             data={'body': 'Hello World'})
         self.assert404(response)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -99,12 +99,12 @@ class AuthTest(HouraiTeahouseTestCase):
         self.adminify('admin')
         self.register('user@user', 'user', 'password')
         response = self.put('/auth/permissions/user',
-                session=session,
-                data={
-            "permissions": {
-                'team': True
-            }
-        })
+                            session=session,
+                            data={
+                                "permissions": {
+                                    'team': True
+                                }
+                            })
         self.assert200(response)
 
     def test_get_permissions_requires_authentication(self):
@@ -130,6 +130,7 @@ class AuthTest(HouraiTeahouseTestCase):
             'admin': True
         })
         self.assert401(response)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -35,8 +35,8 @@ class HouraiTeahouseTestCase(TestCase):
         if session is not None:
             data['session_id'] = session
         print('DATA:', data)
-        response =self.client.open(uri, method=method, data=json.dumps(data),
-                                   content_type='application/json')
+        response = self.client.open(uri, method=method, data=json.dumps(data),
+                                    content_type='application/json')
         print('RESPONSE:', response.data)
         return response
 
@@ -57,7 +57,7 @@ class HouraiTeahouseTestCase(TestCase):
 
     def register_and_login(self, username, password):
         user = self.register('{0}@{1}'.format(username, password), username,
-                password)
+                             password)
         session = self.login(username, password)
         return session.session_uuid
 
@@ -81,6 +81,7 @@ class HouraiTeahouseTestCase(TestCase):
         db.session.merge(perms)
         db.session.commit()
         return user
+
 
 if __name__ == "__main__":
     unittest.main()

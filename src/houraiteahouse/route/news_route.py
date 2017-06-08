@@ -139,6 +139,7 @@ def create_comment(post_id):
         'application/json'
     )
 
+
 @news.route('/<post_id>/comment/<comment_id>', methods=['PUT'])
 @authorize('comment')
 def edit_comment_wrapper(post_id, comment_id):

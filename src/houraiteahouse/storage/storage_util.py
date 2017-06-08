@@ -12,7 +12,6 @@ def try_action(action):
                     continue
                 db_action(value)
                 db.session.commit()
-                db.session.close()
             except Exception as error:
                 logger = logging
                 if 'logger' in kwargs:

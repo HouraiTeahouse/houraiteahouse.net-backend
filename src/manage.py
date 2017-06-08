@@ -35,5 +35,6 @@ def create_admin():
 def create_data():
     pass
 
+
 if __name__ == '__main__':
     manager.run()

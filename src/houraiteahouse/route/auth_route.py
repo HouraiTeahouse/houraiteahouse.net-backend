@@ -22,7 +22,7 @@ def register():
                                  json_data['password'])
     except IntegrityError:
         raise BadRequest(
-                'A user with this name or email already exists.') from None
+            'A user with this name or email already exists.') from None
     return request_util.generate_success_response('success', 'plain/text')
 
 
@@ -89,7 +89,7 @@ def status():
 @authenticate
 def change_password():
     json_data = request.json
-    auth_bl.change_password(json_data['username'],json_data['oldPassword'],
+    auth_bl.change_password(json_data['username'], json_data['oldPassword'],
                             json_data['newPassword'])
     return request_util.generate_success_response(
         'Update successful',

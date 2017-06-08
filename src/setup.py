@@ -17,6 +17,7 @@ def create_or_update(dir_path):
         print('Creating {0} as it currently doesn\'t exist'.format(dir_path))
         os.makedirs(dir_path)
 
+
 create_or_update(basedir)
 for lang in lang_dirs:
     create_or_update(os.path.join(basedir, news_dir, lang))

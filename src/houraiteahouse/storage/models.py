@@ -58,6 +58,7 @@ class HouraiTeahouseModelMixin(object):
                 (cls.__name__, args, kwargs))
         return entity
 
+
 BaseMixin = IdMixin(db.Integer)
 
 
@@ -75,11 +76,13 @@ class Language(db.Model, HouraiTeahouseModelMixin, BaseMixin):
 # Sec 1: User AuthN & AuthZ
 
 # User authN & metadata
+
+
 class User(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     __tablename__ = "user"
 
     username = db.Column('username', db.String(64), nullable=False,
-                          unique=True)
+                         unique=True)
     email = db.Column(db.String(120), nullable=False, unique=True)
     password = db.Column(db.String(255), nullable=False)
     registered_on = db.Column(db.DateTime, nullable=False)
@@ -118,13 +121,13 @@ class UserSession(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     __tablename__ = "sessions"
 
     session_uuid = db.Column('session_uuid', db.String(36), nullable=False,
-                              unique=True)
+                             unique=True)
     valid_after = db.Column(db.DateTime, nullable=False)
     valid_before = db.Column(db.DateTime, nullable=True)
     user_id = db.Column('user_id', db.Integer, db.ForeignKey('user.id'),
-                         nullable=False)
+                        nullable=False)
     user = db.relationship('User', backref=db.backref('session',
-                                                       lazy='dynamic'))
+                                                      lazy='dynamic'))
 
     def __init__(self, user, remember_me=False):
         self.user = user
@@ -303,7 +306,7 @@ class NewsComment(db.Model, HouraiTeahouseModelMixin, BaseMixin):
         db.ForeignKey('user.id'),
         nullable=False)
     author = db.relationship('User', backref=db.backref('newscomment',
-                                                         lazy='dynamic'))
+                                                        lazy='dynamic'))
     news_id = db.Column(
         db.Integer,
         db.ForeignKey('news.id'),

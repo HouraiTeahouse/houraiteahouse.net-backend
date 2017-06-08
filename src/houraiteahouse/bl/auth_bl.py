@@ -3,7 +3,7 @@ from functools import wraps
 from houraiteahouse.route import request_util
 from houraiteahouse.storage import auth_storage, models
 from werkzeug.exceptions import Unauthorized, Forbidden, InternalServerError, \
-                                NotFound
+    NotFound
 
 
 # Signin/signout calls
@@ -54,7 +54,7 @@ def change_password(username, old_password, new_password):
         auth_storage.update_password(user, new_password)
     except:
         raise InternalServerError(
-                'Failed to update password.  Please try again later.')
+            'Failed to update password.  Please try again later.')
 
 
 # Primary authN logic
@@ -78,6 +78,8 @@ def authentication_check(session_id):
     return ret
 
 # Decorator to require authentication for requests
+
+
 def authenticate(func):
     @wraps(func)
     def authenticate_and_call(*args, **kwargs):

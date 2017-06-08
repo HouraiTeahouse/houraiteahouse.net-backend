@@ -7,6 +7,7 @@ from houraiteahouse.storage import auth_storage as auth
 from houraiteahouse.storage import storage_util as util
 from houraiteahouse.storage import models
 from houraiteahouse.storage.models import db, cache
+from werkzeug.exceptions import Forbidden
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +62,7 @@ def get_news(postId, session_id, language=DEFAULT_LANGUAGE):
 
     # TODO(james7132): Make this configurable
     with open_news_file(postId, language=language) as news_file:
-        ret['body'] = news_filej.read()
+        ret['body'] = news_file.read()
 
     return ret
 
@@ -71,8 +72,6 @@ def post_news(title, body, tags, session_id, media=None,
     lang = get_language(language)
 
     tagObjs = [get_tag(name) for name in tags]
-    for name in tags:
-        print(name)
 
     author = auth.get_user_session(session_id).user
     if not author:
@@ -139,7 +138,6 @@ def translate_news(post_id, language, title, body):
 
 def get_tag(name):
     tag = models.NewsTag.get(name=name)
-    # print(tag)
     return tag or create_tag(name)
 
 
@@ -168,7 +166,7 @@ def edit_comment(comment_id, body, session_id):
     comment = models.NewsComment.get_or_die(id=comment_id)
     caller = auth.get_user_session(session_id).user
     if caller != comment.author:
-        raise PermissionError
+        raise Forbidden
 
     comment.body = sanitize_body(body)
     util.try_merge(comment=comment, logger=logger)
@@ -179,13 +177,14 @@ def delete_comment(comment_id, session_id):
     caller = auth.get_user_session(session_id).user
     if caller != comment.get_author and not (
             caller.get_permissions().admin or caller.get_permissions().master):
-        raise PermissionError
+        raise Forbidden
 
     util.try_delete(comment=comment, logger=logger)
     return True
 
 
 def news_to_dict(news, caller=None, language=DEFAULT_LANGUAGE):
+    lang = get_language(language)
     newsDict = {
         'author': news.author.username,
         'isAuthor': caller and caller == news.get_author(),
@@ -194,8 +193,7 @@ def news_to_dict(news, caller=None, language=DEFAULT_LANGUAGE):
         'tags': [tag.name for tag in news.tags]
     }
 
-    title = models.NewsTitle.query.filter_by(
-        news_id=news.id, language_id=lang.id).first()
+    title = models.NewsTitle.get(id=news.id, language_id=lang.id)
     newsDict['title'] = title.get_title() or news.title
 
     if news.media:

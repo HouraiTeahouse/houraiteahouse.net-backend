@@ -82,11 +82,8 @@ def get_news_wrapper(post_id):
 @news.route('/post', methods=['PUT', 'POST'])
 @authorize('news')
 def create_news():
-    media = None if 'media' not in request.data else request.data['media']
-    print(request.get_data())
-    json_data = request.get_json()
-
-    print(request.data['tags'])
+    media = None if 'media' not in request.json else request.json['media']
+    json_data = request.json
     news = news_storage.post_news(
         json_data['title'],
         json_data['body'],
@@ -115,13 +112,13 @@ def create_news():
 @authorize('news')
 def edit_news_wrapper(post_id):
     def edit_news(post_id):
-        media = None if 'media' not in request.data else request.data['media']
+        media = None if 'media' not in request.json else request.json['media']
 
         news = news_storage.edit_news(
             post_id,
-            request.data['title'],
-            request.data['body'],
-            request.data['session_id'],
+            request.json['title'],
+            request.json['body'],
+            request.json['session_id'],
             media
         )
 
@@ -146,9 +143,9 @@ def translate_news_wrapper(post_id):
     def translate_news(post_id):
         isNew = news_storage.translate_news(
             post_id,
-            request.data['language'],
-            request.data['title'],
-            request.data['body']
+            request.json['language'],
+            request.json['title'],
+            request.json['body']
         )
 
         if isNew is None:
@@ -166,13 +163,13 @@ def translate_news_wrapper(post_id):
     return translate_news(post_id)
 
 
-@news.route('/comment/post/<post_id>', methods=['PUT', 'POST'])
+@news.route('/comment/post/<post_id>', methods=['POST'])
 @authorize('comment')
-def create_comment_wrapper(post_id):
+def create_comment(post_id):
     comment = news_storage.post_comment(
         post_id,
-        request.data['body'],
-        request.data['session_id']
+        request.json['body'],
+        request.json['session_id']
     )
 
     if comment is None:
@@ -187,14 +184,14 @@ def create_comment_wrapper(post_id):
     )
 
 
-@news.route('/comment/edit/<comment_id>', methods=['PUT', 'POST'])
+@news.route('/comment/edit/<comment_id>', methods=['PUT'])
 @authorize('comment')
-def edit_comment_wrapper(comment_id):
+def edit_comment(comment_id):
     try:
         comment = news_storage.edit_comment(
             comment_id,
-            request.data['body'],
-            request.data['session_id']
+            request.json['body'],
+            request.json['session_id']
         )
 
         if comment is None:
@@ -218,11 +215,11 @@ def edit_comment_wrapper(comment_id):
 
 @news.route('/comment/delete/<comment_id>', methods=['PUT', 'POST'])
 @authorize('comment')
-def delete_comment_wrapper(comment_id):
+def delete_comment(comment_id):
     try:
         success = news_storage.delete_comment(
             comment_id,
-            request.data['session_id']
+            request.json['session_id']
         )
 
         if not success:

@@ -1,5 +1,6 @@
-from json import loads
 import unittest
+import logging
+from flask import json
 from flask_testing import TestCase
 from houraiteahouse.config import TestConfig
 from houraiteahouse.app import create_app
@@ -15,10 +16,29 @@ class HouraiTeahouseTestCase(TestCase):
 
     def setUp(self):
         db.create_all()
+        logging.getLogger().setLevel(logging.DEBUG)
 
     def tearDown(self):
         db.session.remove()
         db.drop_all()
+
+    def get(self, uri, data={}, session=None):
+        return self.send('GET', uri, data, session)
+
+    def put(self, uri, data={}, session=None):
+        return self.send('PUT', uri, data, session)
+
+    def post(self, uri, data={}, session=None):
+        return self.send('POST', uri, data, session)
+
+    def send(self, method, uri, data={}, session=None):
+        if session is not None:
+            data['session_id'] = session
+        print('DATA:', data)
+        response =self.client.open(uri, method=method, data=json.dumps(data),
+                                   content_type='application/json')
+        print('RESPONSE:', response.data)
+        return response
 
     def assert_error(self, response, error):
         self.assertEqual(response.json, {'message': error})

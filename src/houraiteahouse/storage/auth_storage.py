@@ -7,6 +7,7 @@ from sqlalchemy.orm.session import Session
 from houraiteahouse.storage import models
 from houraiteahouse.storage import storage_util as util
 from houraiteahouse.storage.models import db, cache
+from werkzeug.exceptions import Forbidden
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +44,11 @@ def get_user_by_id(userId):
 
 
 def get_permissions_by_username(username):
-    user = get_user(username).permissions
+    permissions = get_user(username).permissions
     if permissions is not None:
         permissions = permissions.__dict__
         permissions.pop('_sa_instance_state')
-        permissions.pop('permissions_id')
+        permissions.pop('id')
 
     return permissions
 
@@ -65,14 +66,14 @@ def set_permissions_by_username(username, permissions, session_uuid):
             # You MUST be a master to promote admins
             raise error
 
-    permissionsObj = get_permissions_by_username(username)
+    permissionsObj = models.User.get_or_die(username=username).permissions
 
     if permissionsObj.master:
         # This user's permissions cannot be set through calls!
         raise error
 
     permissionsObj.update_permissions(permissions)
-    util.try_merge(permissionsObj)
+    util.try_merge(permissions=permissionsObj)
 
 
 def create_user(email, username, password):

@@ -1,8 +1,7 @@
-from mock import mock_open, patch
 import unittest
+from unittest.mock import mock_open, patch
 from test_util import HouraiTeahouseTestCase
 from houraiteahouse.storage.models import db, Language
-
 
 USERNAME = 'news'
 
@@ -22,22 +21,20 @@ class NewsTest(HouraiTeahouseTestCase):
         data = {
             'title': 'Local Man Drinks Mountain Dew',
             'body': 'Test post pls ignore',
-            'tags': {
+            'tags': [
                 'james', 'mountain dew', 'local man'
-            }
+            ]
         }
-        if session_id is not None:
-            data['session_id'] = session_id
         with patch('builtins.open', m, create=True):
-            return self.client.post('/news/post', data=data)
+            return self.post('/news/post', session=session_id, data=data)
 
     def test_list_fails_without_language(self):
         response = self.client.get('/news/list')
         self.assert400(response)
 
-    def test_list_fails_on_empty_news(self):
+    def test_list_doesnt_fail_on_empty_news(self):
         response = self.client.get('/news/list?language=en_US')
-        self.assert404(response)
+        self.assert200(response)
 
     def test_tag_fails_on_empty_tag(self):
         response = self.client.get('/news/tag/test')
@@ -58,7 +55,7 @@ class NewsTest(HouraiTeahouseTestCase):
 
     def test_post_requires_authentication(self):
         response = self.post_test_news()
-        self.assert403(response)
+        self.assert401(response)
 
     def test_post_requires_authorization(self):
         response = self.post_test_news(self.session)
@@ -70,60 +67,55 @@ class NewsTest(HouraiTeahouseTestCase):
 
     def test_edit_fails_on_missing_post(self):
         self.adminify(USERNAME)
-        response = self.client.post('/news/edit/1', data={
-            'session_id': self.session,
-            'title': 'Local Man Drinks Mountain Dew',
-            'body': 'Test post pls ignore',
-            'tags': {
-                'james', 'mountain dew', 'florida man'
-            }
-        })
-        self.assert400(response)
+        response = self.put(
+            '/news/edit/1',
+            session=self.session,
+            data={
+                'title': 'Local Man Drinks Mountain Dew',
+                'body': 'Test post pls ignore',
+                'tags': [
+                    'james', 'mountain dew', 'florida man'
+                ]
+            })
+        self.assert404(response)
 
     def test_edit_requires_authentication(self):
-        response = self.client.post('/news/edit/1', data={
-            'title': 'Local Man Drinks Mountain Dew',
-            'body': 'Test post pls ignore',
-            'tags': {
-                'james', 'mountain dew', 'florida man'
-            }
-        })
-        self.assert403(response)
+        response = self.put(
+            '/news/edit/1',
+            data={
+                'title': 'Local Man Drinks Mountain Dew',
+                'body': 'Test post pls ignore',
+                'tags': [
+                    'james', 'mountain dew', 'florida man'
+                ]
+            })
+        self.assert401(response)
 
     def test_edit_requires_authorization(self):
-        response = self.client.post('/news/edit/1', data={
-            'session_id': self.session,
-            'title': 'Local Man Drinks Mountain Dew',
-            'body': 'Test post pls ignore',
-            'tags': {
-                'james', 'mountain dew', 'florida man'
-            }
-        })
-        self.assert403(response)
-
-    def test_translate_requires_authorization(self):
-        response = self.client.post('/news/translate/1', data={
-            'session_id': self.session
-           })
+        response = self.put(
+            '/news/edit/1',
+            session=self.session,
+            data={
+                'title': 'Local Man Drinks Mountain Dew',
+                'body': 'Test post pls ignore',
+                'tags': [
+                    'james', 'mountain dew', 'florida man'
+                ]
+            })
         self.assert403(response)
 
     def test_translate_requires_authentication(self):
-        response = self.client.post('/news/translate/1', data={})
+        response = self.post('/news/translate/1')
+        self.assert401(response)
+
+    def test_translate_requires_authorization(self):
+        response = self.post('/news/translate/1', session=self.session)
         self.assert403(response)
 
     def test_comment_post_fails_on_missing_post(self):
-        response = self.client.post('/news/comment/post/1', data={
-            'session_id': self.session,
-            'body': 'Hello World'
-        })
-        self.assert400(response)
-
-    def test_comment_post_fails_on_missing_post(self):
-        response = self.client.post('/news/comment/post/1', data={
-            'session_id': self.session,
-            'body': 'Hello World'
-        })
-        self.assert400(response)
+        response = self.post('/news/comment/post/1', session=self.session,
+                             data={'body': 'Hello World'})
+        self.assert404(response)
 
 
 if __name__ == "__main__":

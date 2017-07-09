@@ -1,5 +1,7 @@
 import os
+import logging
 from .util.file_utils import load_json_file
+
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -40,6 +42,7 @@ class DevelopmentConfig(BaseConfig):
 class TestConfig(BaseConfig):
     DEBUG = True
     TESTING = True
+    PRESERVE_CONTEXT_ON_EXCEPTION = False
 
 
 # Config used for the production server

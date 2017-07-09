@@ -6,7 +6,7 @@ class AuthTest(HouraiTeahouseTestCase):
 
     def test_update_can_succeed(self):
         session = self.register_and_login('admin', 'password')
-        response = self.client.post('/auth/update', data={
+        response = self.post('/auth/update', data={
             'username': 'admin',
             'oldPassword': 'password',
             'newPassword': 'password3',
@@ -16,48 +16,66 @@ class AuthTest(HouraiTeahouseTestCase):
 
     def test_update_fails_if_password_is_incorrect(self):
         session = self.register_and_login('admin', 'password')
-        response = self.client.post('/auth/update', data={
+        response = self.post('/auth/update', data={
             'username': 'admin',
             'oldPassword': 'passowrd2',
             'newPassword': 'password3',
             'session_id': session
         })
-        self.assert400(response)
+        self.assert401(response)
 
     def test_update_requires_authentication(self):
-        response = self.client.post('/auth/update', data={
+        response = self.post('/auth/update', data={
             'username': 'admin',
             'oldPassword': 'password',
             'newPassword': 'password3',
         })
-        self.assert403(response)
+        self.assert401(response)
 
-    def test_permissions_get_can_succeed(self):
+    def test_get_permissions_can_succeed(self):
         session = self.register_and_login('admin', 'password')
         self.adminify('admin')
         self.register('user@user', 'user', 'password')
-        response = self.client.get('/auth/permissions/user', data={
-                'session_id': session
-            })
+        response = self.get('/auth/permissions/user', session=session)
         self.assert200(response)
 
-    # def test_permissions_post_can_succeed(self):
-        # session = self.register_and_login('admin', 'password')
-        # self.register('user@user', 'user', 'password')
-        # response = self.client.post('/auth/permissions/user', data= {
-        # 'session_id': session,
-        # 'translate': True
-        # })
-        # self.assert200(response)
-
-    def test_permissions_requires_authorization(self):
+    def test_put_permissions_can_succeed(self):
+        session = self.register_and_login('admin', 'password')
+        self.adminify('admin')
         self.register('user@user', 'user', 'password')
-        response = self.client.get('/auth/permissions/user')
-        self.assert403(response)
-        response = self.client.post('/auth/permissions/user', data={
+        response = self.put('/auth/permissions/user',
+                            session=session,
+                            data={
+                                "permissions": {
+                                    'team': True
+                                }
+                            })
+        self.assert200(response)
+
+    def test_get_permissions_requires_authentication(self):
+        self.register('user@user', 'user', 'password')
+        response = self.get('/auth/permissions/user')
+        self.assert401(response)
+
+    def test_put_permissions_requires_authentication(self):
+        self.register('user@user', 'user', 'password')
+        response = self.put('/auth/permissions/user', data={
+            "permissions": {
+                'team': True
+            }
+        })
+        self.assert401(response)
+
+    def test_get_permissions_requires_authorization(self):
+        self.register('user@user', 'user', 'password')
+        self.adminify('user')
+        response = self.get('/auth/permissions/user')
+        self.assert401(response)
+        response = self.put('/auth/permissions/user', data={
             'admin': True
         })
-        self.assert403(response)
+        self.assert401(response)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -3,115 +3,103 @@ import logging
 import os
 from datetime import datetime
 from flask_sqlalchemy_cache import FromCache
+from houraiteahouse.storage import auth_storage as auth
+from houraiteahouse.storage import storage_util as util
+from houraiteahouse.storage import models
 from houraiteahouse.storage.models import db, cache
-from . import models
+from werkzeug.exceptions import Forbidden
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_LANGUAGE = 'en_US'
 
-# TODO: Major refactor to remove a lot of code duplication and cache read calls
+
+def sanitize_body(body):
+    return body.replace('\n', '<br />')  # replace linebreaks with HTML breaks
 
 
-def list_news(language='en_US'):
+def get_language(language=DEFAULT_LANGUAGE):
+    try:
+        lang = models.Language.get(language_code=language)
+    except Exception:
+        logger.warning('Unrecognized language code {}'.format(language))
+        lang = models.Language.get(language_code=DEFAULT_LANGUAGE)
+    return lang
+
+
+def list_news(language=DEFAULT_LANGUAGE):
     news = models.NewsPost.query.order_by(models.NewsPost.created.desc()) \
         .options(FromCache(cache)).all()
-    if news is None or news == []:
+    if news is None:
         return None
-    newsList = []
-    for post in news:
-        newsList.append(news_to_dict(post, None, language))
-    return newsList
+    return [news_to_dict(post, language=language) for post in news]
 
 
-def tagged_news(tag, language='en_US'):
-    tag = models.NewsTag.query.filter_by(name=tag) \
-        .options(FromCache(cache)).first()
+def open_news_file(postId, language=DEFAULT_LANGUAGE, filemode='r'):
+    post_path = os.path.join('/var/htwebsite/news/', language, postId)
+    return open(post_path, filemode)
+
+
+def tagged_news(tag, language=DEFAULT_LANGUAGE):
+    tag = models.NewsTag.get(name=tag)
     if tag is None or tag.news is None:
         return None
-    newsList = []
-    for post in tag.news:
-        newsList.append(news_to_dict(post, None, language))
-    return newsList
+    return [news_to_dict(post, language=language) for post in tag.news]
 
 
 # "postId" is a misnomer, it's actually the short title
 # (ie, [date]-shortened-title)
-def get_news(postId, session_id, language='en_US'):
-    news = models.NewsPost.query.filter_by(post_short=postId) \
-        .options(FromCache(cache)).first()
-    if news is None:
-        return None
-
+def get_news(postId, session_id, language=DEFAULT_LANGUAGE):
+    news = models.NewsPost.get_or_die(post_short=postId)
     caller = None
-    if session_id is not None:
-        caller = models.UserSession.query.filter_by(
-            session_uuid=session_id).options(FromCache(cache)).first() \
-            .get_user()
+    if session_id:
+        caller = auth.get_user_session(session_id).user
 
     ret = news_to_dict(news, caller, language)
 
-    with open('/var/htwebsite/news/' + language + '/' + postId, 'r') as file:
-        ret['body'] = file.read()
+    # TODO(james7132): Make this configurable
+    with open_news_file(postId, language=language) as news_file:
+        ret['body'] = news_file.read()
 
     return ret
 
 
-def post_news(title, body, tags, session_id, media=None, language='en_US'):
-    lang = models.Language.query.filter_by(language_code=language) \
-        .options(FromCache(cache)).first()
+def post_news(title, body, tags, session_id, media=None,
+              language=DEFAULT_LANGUAGE):
+    lang = get_language(language)
 
-    tagObjs = []
-    for tagName in tags:
-        tag = get_tag(tagName)
-        if tag is None:
-            return None
-        tagObjs.append(tag)
+    tagObjs = [get_tag(name) for name in tags]
 
-    author = models.UserSession.query.filter_by(
-        session_uuid=session_id).options(FromCache(cache)).first() \
-        .get_user()
-    if author is None:
+    author = auth.get_user_session(session_id).user
+    if not author:
         return None
 
-    body = body.replace('\n', '<br />')  # replace linebreaks with HTML breaks
+    body = sanitize_body(body)
 
     created = datetime.utcnow()
     shortTitle = readDate(created) + '-' + title.replace(' ', '-')[:53]
-    with open('/var/htwebsite/news/' + language + '/' + shortTitle, 'w') as f:
-        f.write(body)
+    with open_news_file(shortTitle, language, filemode='w') as news_file:
+        news_file.write(body)
 
     news = models.NewsPost(shortTitle, title, created, author, tagObjs, media)
 
     postTitle = models.NewsTitle(news, lang, title)
 
-    try:
-        db.session.add(news)
-        db.session.add(postTitle)
-        db.session.commit()
-        success = True
-    except Exception as e:
-        logger.exception('Failed to create news post: {0}'.format(e))
-        success = False
-        db.session.close()
-    return get_news(shortTitle, session_id, language) if success else None
+    util.try_add(news=news, logger=logger)
+    return get_news(shortTitle, session_id, language)
 
 
-def edit_news(post_id, title, body, session_id, media, language='en_US'):
-    news = models.NewsPost.query.filter_by(post_short=post_id) \
-        .options(FromCache(cache)).first()
-    if news is None:
-        return None
+def edit_news(post_id, title, body, session_id, media,
+              language=DEFAULT_LANGUAGE):
+    news = models.NewsPost.get_or_die(post_short=post_id)
+    caller = auth.get_user_session(session_id).user
+    if caller != news.author:
+        raise Forbidden
 
-    caller = models.UserSession.query.filter_by(
-        session_uuid=session_id).first().get_user()
-    if caller != news.get_author():
-        raise PermissionError
+    body = sanitize_body(body)
 
-    body = body.replace('\n', '<br />')  # replace linebreaks with HTML breaks
-
-    with open('/var/htwebsite/news/' + language + '/' + news.post_short, 'w') \
-            as f:
-        f.write(body)
+    with open_news_file(news.post_short, language, filemode='w') as news_file:
+        news_file.write(body)
 
     news.title = title
     news.media = media
@@ -119,184 +107,112 @@ def edit_news(post_id, title, body, session_id, media, language='en_US'):
 
     ret = news_to_dict(news, caller)
 
-    try:
-        db.session.merge(news)
-        db.session.commit()
-        db.session.close()
-        ret['body'] = body
-        return ret
-    except Exception as e:
-        logger.exception('Failed to edit comment: {0}'.format(e))
-        db.session.close()
-        raise e
+    util.try_merge(news=news, logger=logger)
+    ret['body'] = body
+    return ret
 
 
 def translate_news(post_id, language, title, body):
-    news = models.NewsPost.query.filter_by(post_short=post_id) \
-        .options(FromCache(cache)).first()
-    if news is None:
-        return None
-    lang = models.Language.query.filter_by(language_code=language) \
-        .options(FromCache(cache)).first()
-    if(lang is None):
+    news = models.NewsPost.get_or_die(post_short=post_id)
+    lang = get_language(language)
+    if not lang:
         return None
 
-    body = body.replace('\n', '<br />')  # replace linebreaks with HTML breaks
+    body = sanitize_body(body)
 
-    with open('/var/htwebsite/news/' + language + '/' + news.post_short, 'w') \
-            as f:
-        f.write(body)
+    with open_news_file(news.post_short, language, filemode='w') as news_file:
+        news_file.write(body)
 
     ret = False
-    title = models.NewsTitle.query.filter_by(news=news, language=lang) \
-        .options(FromCache(cache)).first()
-    if(title is None):
+    title = models.NewsTitle.get(news=news, language=lang)
+    if not title:
         title = models.NewsTitle(news, lang, title)
         ret = True
 
-    try:
-        db.session.add(title)
-        db.session.commit()
-        db.session.close()
-        return ret
-    except Exception as e:
-        logger.exception('Failed to post translation: {0}'.format(e))
-        db.session.close()
-        raise e
+    util.try_add(title=title, logger=logger)
+    return ret
 
 
 def get_tag(name):
-    tag = models.NewsTag.query.filter_by(name=name) \
-        .options(FromCache(cache)).first()
-    if tag is None:
-        return create_tag(name)
-    return tag
+    tag = models.NewsTag.get(name=name)
+    return tag or create_tag(name)
 
 
 def create_tag(name):
     tag = models.NewsTag(name)
-    try:
-        db.session.add(tag)
-        db.session.commit()
-        # It won't be in the cache yet, so we must actually load it.
-        return models.NewsTag.query.filter_by(name=name).first()
-    except Exception as e:
-        logger.exception('Failed to create tag: {0}'.format(e))
-        db.session.close()
-        return -1
+    util.try_add(tag=tag, logger=logger)
+    # It won't be in the cache yet, so we must actually load it.
+    return tag
 
 
 def post_comment(post_id, body, session_id):
-    news = models.NewsPost.query.filter_by(post_short=post_id) \
-        .options(FromCache(cache)).first()
-    if news is None:
-        return None
-
-    author = models.UserSession.query.filter_by(
-        session_uuid=session_id).first().get_user()
-    if author is None:
+    news = models.NewsPost.get_or_die(post_short=post_id)
+    author = auth.get_user_session(session_id).user
+    if not author:
         return None
     ret = {'body': body, 'author': author.username}
 
-    body = body.replace('\n', '<br />')  # replace linebreaks with HTML breaks
+    body = sanitize_body(body)
 
     comment = models.NewsComment(body, author, news)
-    try:
-        db.session.add(comment)
-        db.session.commit()
-        db.session.close()
-        return ret
-    except Exception as e:
-        logger.exception('Failed to create comment: {0}'.format(e))
-        db.session.close()
-        raise e
+    util.try_add(comment=comment, logger=logger)
+    return ret
 
 
 def edit_comment(comment_id, body, session_id):
-    comment = models.NewsComment.query.filter_by(comment_id=comment_id).first()
-    if comment is None:
-        return None
+    comment = models.NewsComment.get_or_die(id=comment_id)
+    caller = auth.get_user_session(session_id).user
+    if caller != comment.author:
+        raise Forbidden
 
-    caller = models.UserSession.query.filter_by(
-        session_uuid=session_id).first().get_user()
-    if caller != comment.get_author():
-        raise PermissionError
-
-    body = body.replace('\n', '<br />')
-
-    comment.body = body
-
-    try:
-        db.session.merge(comment)
-        db.session.commit()
-        db.session.close()
-    except Exception as e:
-        logger.exception('Failed to edit comment: {0}'.format(e))
-        db.session.close()
-        raise e
+    comment.body = sanitize_body(body)
+    util.try_merge(comment=comment, logger=logger)
 
 
 def delete_comment(comment_id, session_id):
-    comment = models.NewsComment.query.filter_by(comment_id=comment_id).first()
-    if comment is None:
-        return False
-
-    caller = models.UserSession.query.filter_by(
-        session_uuid=session_id).first().get_user()
+    comment = models.NewsComment.get_or_die(id=comment_id)
+    caller = auth.get_user_session(session_id).user
     if caller != comment.get_author and not (
             caller.get_permissions().admin or caller.get_permissions().master):
-        raise PermissionError
+        raise Forbidden
 
-    try:
-        db.session.delete(comment)
-        db.session.commit()
-        db.session.close()
-        return True
-    except Exception as e:
-        logger.exception('Failed to delete comment: {0}'.format(e))
-        db.session.close()
-        raise e
+    util.try_delete(comment=comment, logger=logger)
+    return True
 
 
-def news_to_dict(news, caller, language='en_US'):
-    try:
-        lang = models.Language.query.filter_by(language_code=language) \
-            .options(FromCache(cache)).first()
-    except Exception:
-        logger.warning("Unrecognized language code {}".format(language))
-        lang = models.Language.query.filter_by(language_code='en_US') \
-            .options(FromCache(cache)).first()
+def news_to_dict(news, caller=None, language=DEFAULT_LANGUAGE):
+    lang = get_language(language)
+    newsDict = {
+        'author': news.author.username,
+        'isAuthor': caller and caller == news.get_author(),
+        'created': str(news.created),
+        'post_id': news.post_short,
+        'tags': [tag.name for tag in news.tags]
+    }
 
-    newsDict = dict()
-    newsDict['author'] = news.author.username
-    newsDict['isAuthor'] = caller is not None and caller == news.get_author()
-    newsDict['created'] = str(news.created)
-    newsDict['post_id'] = news.post_short
-    newsDict['tags'] = []
+    title = models.NewsTitle.get(id=news.id, language_id=lang.id)
+    newsDict['title'] = title.get_title() or news.title
 
-    title = models.NewsTitle.query.filter_by(
-        news_id=news.get_id(), language_id=lang.get_id()).first()
-    newsDict['title'] = title.get_title() if title is not None else news.title
-
-    if news.media is not None:
+    if news.media:
         newsDict['media'] = news.media
 
-    for tag in news.tags:
-        newsDict['tags'].append(tag.name)
-
     if news.comments:
-        newsDict['comments'] = []
-        for comment in news.comments:
-            newsDict['comments'].append({
-                'id': comment.comment_id,
-                'author': comment.get_author() .get_username(),
-                'body': comment.body,
-                'isAuthor': caller and caller == comment.get_author()})
+        newsDict['comments'] = [comment_to_dict(comment, caller)
+                                for comment in news.comments]
 
     if news.lastEdit:
         newsDict['lastEdit'] = str(news.lastEdit)
 
     return newsDict
+
+
+def comment_to_dict(comment, caller=None):
+    return {
+        'id': comment.comment_id,
+        'author': comment.get_author() .get_username(),
+        'body': comment.body,
+        'isAuthor': caller and caller == comment.get_author()
+    }
 
 
 def readDate(d):

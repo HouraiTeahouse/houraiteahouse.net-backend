@@ -2,10 +2,12 @@ import logging
 
 from datetime import datetime
 from flask_sqlalchemy_cache import FromCache
-from houraiteahouse.storage.models import db, cache
 from sqlalchemy import inspect, exc
 from sqlalchemy.orm.session import Session
-from . import models
+from houraiteahouse.storage import models
+from houraiteahouse.storage import storage_util as util
+from houraiteahouse.storage.models import db, cache
+from werkzeug.exceptions import Forbidden
 
 logger = logging.getLogger(__name__)
 
@@ -14,19 +16,14 @@ logger = logging.getLogger(__name__)
 
 
 def new_user_session(user, remember_me):
-    userSession = models.UserSession(user, remember_me)
-    session = Session.object_session(userSession)
-    uuid = userSession.get_uuid()
-    try:
-        session.add(userSession)
-        session.commit()
-    except Exception as e:
-        session.close()
-        raise e
+    user_session = models.UserSession(user, remember_me)
+    uuid = user_session.session_uuid
+    util.try_add(session=user_session, logger=logger)
     return get_user_session(uuid)
 
 
 def get_user_session(session_uuid):
+<<<<<<< HEAD
     return models.UserSession.query \
         .filter_by(session_uuid=session_uuid) \
         .options(FromCache(cache)) \
@@ -47,57 +44,59 @@ def close_user_session(session_uuid):
         .options(FromCache(cache)) \
         .first()
     db.session.delete(userSession)
+=======
+    return models.UserSession.get(session_uuid=session_uuid)
+
+
+def close_user_session(session_uuid):
+    user_session = get_user_session(session_uuid)
+    if not user_session:
+        return
+    user_session.valid_before = datetime.utcnow()
+    db.session.merge(user_session)
+>>>>>>> develop
     db.session.commit()
 
 
 def get_user(username):
-    return models.User.query.filter_by(username=username) \
-        .options(FromCache(cache)).first()
+    return models.User.get(username=username)
 
 
 def get_user_by_id(userId):
-    return models.User.query.filter_by(user_id=userId) \
-        .options(FromCache(cache)).first()
+    return models.User.get(id=userId)
 
 
 def get_permissions_by_username(username):
-    permissions = models.User.query.filter_by(
-        username=username).first().get_permissions()
+    permissions = get_user(username).permissions
     if permissions is not None:
         permissions = permissions.__dict__
         permissions.pop('_sa_instance_state')
-        permissions.pop('permissions_id')
+        permissions.pop('id')
 
     return permissions
 
 
 def set_permissions_by_username(username, permissions, session_uuid):
-    callerPermissions = get_user_session(
-        session_uuid).get_user().get_permissions()
+    callerPermissions = get_user_session(session_uuid).user.permissions
+
+    error = Forbidden('You do not have the permissions to do this.')
 
     if not callerPermissions.master:
         if not callerPermissions.admin:
             # If you're not a master or admin you can't touch this.
-            return False
+            raise error
         if permissions['admin']:
             # You MUST be a master to promote admins
-            return False
+            raise error
 
-    permissionsObj = models.User.query.filter_by(
-        username=username).first().get_permissions()
+    permissionsObj = models.User.get_or_die(username=username).permissions
 
     if permissionsObj.master:
         # This user's permissions cannot be set through calls!
-        return False
+        raise error
 
-    try:
-        permissionsObj.update_permissions(permissions)
-    except:
-        return False
-
-    db.session.merge(permissionsObj)
-    db.session.commit()
-    return True
+    permissionsObj.update_permissions(permissions)
+    util.try_merge(permissions=permissionsObj)
 
 
 def create_user(email, username, password):
@@ -109,6 +108,7 @@ def create_user(email, username, password):
         password=password,
         permissions=permissions
     )
+<<<<<<< HEAD
     try:
         db.session.add(user)
         db.session.add(permissions)
@@ -122,6 +122,10 @@ def create_user(email, username, password):
                      .format(username, email),
                      error)
     return False
+=======
+    util.try_add(user=user, logger=logger)
+    util.try_add(permissions=permissions, logger=logger)
+>>>>>>> develop
 
 
 def update_password(user, password):
@@ -132,6 +136,7 @@ def update_password(user, password):
         return: boolean, whether the change was successful
     """
     user.change_password(password)
+<<<<<<< HEAD
     # Changing passwords should the user out of all of their sessions
     close_all_sessions(user.user_id)
     try:
@@ -144,3 +149,6 @@ def update_password(user, password):
             .format(user),
             e)
     return False
+=======
+    util.try_merge(user=user, logger=logger)
+>>>>>>> develop

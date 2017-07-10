@@ -23,7 +23,6 @@ def new_user_session(user, remember_me):
 
 
 def get_user_session(session_uuid):
-<<<<<<< HEAD
     return models.UserSession.query \
         .filter_by(session_uuid=session_uuid) \
         .options(FromCache(cache)) \
@@ -44,17 +43,6 @@ def close_user_session(session_uuid):
         .options(FromCache(cache)) \
         .first()
     db.session.delete(userSession)
-=======
-    return models.UserSession.get(session_uuid=session_uuid)
-
-
-def close_user_session(session_uuid):
-    user_session = get_user_session(session_uuid)
-    if not user_session:
-        return
-    user_session.valid_before = datetime.utcnow()
-    db.session.merge(user_session)
->>>>>>> develop
     db.session.commit()
 
 
@@ -108,24 +96,8 @@ def create_user(email, username, password):
         password=password,
         permissions=permissions
     )
-<<<<<<< HEAD
-    try:
-        db.session.add(user)
-        db.session.add(permissions)
-        db.session.commit()
-        return True
-    except exc.IntegrityError:
-        logger.warning("Attempted to create a non-unique user %s with email %s",
-                       username, email)
-    except Exception as error:
-        logger.error('Failed to create user {0} with email {1} due to DB error'
-                     .format(username, email),
-                     error)
-    return False
-=======
     util.try_add(user=user, logger=logger)
     util.try_add(permissions=permissions, logger=logger)
->>>>>>> develop
 
 
 def update_password(user, password):
@@ -136,19 +108,6 @@ def update_password(user, password):
         return: boolean, whether the change was successful
     """
     user.change_password(password)
-<<<<<<< HEAD
     # Changing passwords should the user out of all of their sessions
     close_all_sessions(user.user_id)
-    try:
-        db.session.add(user)
-        db.session.commit()
-        return True
-    except Exception as e:
-        logger.error(
-            'Failed to update password for user {0} due to DB error'
-            .format(user),
-            e)
-    return False
-=======
     util.try_merge(user=user, logger=logger)
->>>>>>> develop

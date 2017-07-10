@@ -10,15 +10,20 @@ class AuthUserStorageTest(HouraiTeahouseTestCase):
 
     def test_create_user_requires_unique_username(self):
         self.assertTrue(auth_storage.create_user("test@test", "test", "test"))
-        self.assertFalse(auth_storage.create_user("test2@test", "test", "test2"))
+        self.assertFalse(auth_storage.create_user("test2@test",
+                                                  "test",
+                                                  "test2"))
 
     def test_create_user_requires_unique_email(self):
-        self.assertTrue(auth_storage.create_user("test@test", "test", "test"))
-        self.assertFalse(auth_storage.create_user("test@test", "test2", "test2"))
+        self.assertTrue(auth_storage.create_user("test@test",
+                                                 "test", "test"))
+        self.assertFalse(auth_storage.create_user(
+            "test@test", "test2", "test2"))
 
     def test_create_user_allows_duplicate_passwords(self):
         self.assertTrue(auth_storage.create_user("test@test", "test", "test"))
-        self.assertTrue(auth_storage.create_user("test2@test", "test2", "test"))
+        self.assertTrue(auth_storage.create_user(
+            "test2@test", "test2", "test"))
 
     def test_get_user_can_succeed(self):
         self.assertTrue(auth_storage.create_user("test@test", "test", "test"))

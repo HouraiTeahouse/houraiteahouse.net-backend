@@ -10,11 +10,10 @@ from ..storage.models import db
 from . import request_util
 from werkzeug.exceptions import NotFound, BadRequest, Unauthorized
 
-user = Blueprint('auth', __name__)
+user = Blueprint('user', __name__)
 
 
 @user.route('', methods=['POST'])
-@handle_request_errors('Registration')
 def register():
     json_data = request.json
 
@@ -30,24 +29,18 @@ def register():
 @user.route('', methods=['PUT'])
 @authenticate
 def change_password():
-    json_data = request.data
+    json_data = request.json
 
-    if auth_bl.change_password(
+    auth_bl.change_password(
         json_data['username'],
         json_data['oldPassword'],
         json_data['newPassword']
-    ):
+    )
 
-        return request_util.generate_success_response(
-            'Update successful',
-            'plain/text'
-        )
-
-    else:
-        return request_util.generate_error_response(
-            400,
-            'Current password is incorrect.'
-        )
+    return request_util.generate_success_response(
+                        'Update successful',
+                        'plain/text'
+                    )
 
 
 @user.route('/login', methods=['POST'])
@@ -83,7 +76,7 @@ def logout():
     )
 
 
-@auth.route('/status', methods=['GET'])
+@user.route('/status', methods=['GET'])
 def status():
     json_data = request.args
     if 'session_id' not in json_data:

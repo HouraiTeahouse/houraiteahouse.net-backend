@@ -1,11 +1,11 @@
-import unittest
+
 from test_util import HouraiTeahouseTestCase
 
 
 class AuthTest(HouraiTeahouseTestCase):
 
     def test_register_can_succeed(self):
-        response = self.post('/auth/register', data={
+        response = self.post('/auth', data={
             'email': 'ad@min',
             'username': 'admin',
             'password': 'admin'
@@ -14,7 +14,7 @@ class AuthTest(HouraiTeahouseTestCase):
 
     def test_register_requires_unique_usernames(self):
         self.register('ad@min', 'admin', 'admin')
-        response = self.post('/auth/register', data={
+        response = self.post('/auth', data={
             'email': 'test@test',
             'username': 'admin',
             'password': 'admin'
@@ -23,7 +23,7 @@ class AuthTest(HouraiTeahouseTestCase):
 
     def test_register_require_unique_emails(self):
         self.register('ad@min', 'admin1', 'password')
-        response = self.post('/auth/register', data={
+        response = self.post('/auth', data={
             'email': 'ad@min',
             'username': 'admin2',
             'password': 'admin'
@@ -61,7 +61,7 @@ class AuthTest(HouraiTeahouseTestCase):
 
     def test_update_can_succeed(self):
         session = self.register_and_login('admin', 'password')
-        response = self.post('/auth/update', data={
+        response = self.put('/auth', data={
             'username': 'admin',
             'oldPassword': 'password',
             'newPassword': 'password3',
@@ -71,7 +71,7 @@ class AuthTest(HouraiTeahouseTestCase):
 
     def test_update_fails_if_password_is_incorrect(self):
         session = self.register_and_login('admin', 'password')
-        response = self.post('/auth/update', data={
+        response = self.put('/auth', data={
             'username': 'admin',
             'oldPassword': 'passowrd2',
             'newPassword': 'password3',
@@ -80,7 +80,7 @@ class AuthTest(HouraiTeahouseTestCase):
         self.assert401(response)
 
     def test_update_requires_authentication(self):
-        response = self.post('/auth/update', data={
+        response = self.put('/auth', data={
             'username': 'admin',
             'oldPassword': 'password',
             'newPassword': 'password3',
@@ -91,14 +91,14 @@ class AuthTest(HouraiTeahouseTestCase):
         session = self.register_and_login('admin', 'password')
         self.adminify('admin')
         self.register('user@user', 'user', 'password')
-        response = self.get('/auth/permissions/user', session=session)
+        response = self.get('/auth/user/permissions', session=session)
         self.assert200(response)
 
     def test_put_permissions_can_succeed(self):
         session = self.register_and_login('admin', 'password')
         self.adminify('admin')
         self.register('user@user', 'user', 'password')
-        response = self.put('/auth/permissions/user',
+        response = self.put('/auth/user/permissions',
                             session=session,
                             data={
                                 "permissions": {
@@ -109,12 +109,12 @@ class AuthTest(HouraiTeahouseTestCase):
 
     def test_get_permissions_requires_authentication(self):
         self.register('user@user', 'user', 'password')
-        response = self.get('/auth/permissions/user')
+        response = self.get('/auth/user/permissions')
         self.assert401(response)
 
     def test_put_permissions_requires_authentication(self):
         self.register('user@user', 'user', 'password')
-        response = self.put('/auth/permissions/user', data={
+        response = self.put('/auth/user/permissions', data={
             "permissions": {
                 'team': True
             }
@@ -124,9 +124,9 @@ class AuthTest(HouraiTeahouseTestCase):
     def test_get_permissions_requires_authorization(self):
         self.register('user@user', 'user', 'password')
         self.adminify('user')
-        response = self.get('/auth/permissions/user')
+        response = self.get('/auth/user/permissions')
         self.assert401(response)
-        response = self.put('/auth/permissions/user', data={
+        response = self.put('/auth/user/permissions', data={
             'admin': True
         })
         self.assert401(response)

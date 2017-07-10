@@ -26,26 +26,22 @@ class NewsTest(HouraiTeahouseTestCase):
             ]
         }
         with patch('builtins.open', m, create=True):
-            return self.post('/news/post', session=session_id, data=data)
+            return self.post('/news', session=session_id, data=data)
 
     def test_list_fails_without_language(self):
-        response = self.client.get('/news/list')
+        response = self.client.get('/news')
         self.assert400(response)
 
     def test_list_doesnt_fail_on_empty_news(self):
-        response = self.client.get('/news/list?language=en_US')
+        response = self.client.get('/news?language=en_US')
         self.assert200(response)
 
-    def test_tag_fails_on_empty_tag(self):
-        response = self.client.get('/news/tag/test')
-        self.assert404(response)
-
     def test_get_fails_without_language(self):
-        response = self.client.get('/news/get/1')
+        response = self.client.get('/news/1')
         self.assert400(response)
 
     def test_get_fails_on_missing_post(self):
-        response = self.client.get('/news/get/1?language=en_US')
+        response = self.client.get('/news/1?language=en_US')
         self.assert404(response)
 
     def test_post(self):
@@ -68,7 +64,7 @@ class NewsTest(HouraiTeahouseTestCase):
     def test_edit_fails_on_missing_post(self):
         self.adminify(USERNAME)
         response = self.put(
-            '/news/edit/1',
+            '/news/1',
             session=self.session,
             data={
                 'title': 'Local Man Drinks Mountain Dew',
@@ -81,7 +77,7 @@ class NewsTest(HouraiTeahouseTestCase):
 
     def test_edit_requires_authentication(self):
         response = self.put(
-            '/news/edit/1',
+            '/news/1',
             data={
                 'title': 'Local Man Drinks Mountain Dew',
                 'body': 'Test post pls ignore',
@@ -93,7 +89,7 @@ class NewsTest(HouraiTeahouseTestCase):
 
     def test_edit_requires_authorization(self):
         response = self.put(
-            '/news/edit/1',
+            '/news/1',
             session=self.session,
             data={
                 'title': 'Local Man Drinks Mountain Dew',
@@ -105,15 +101,15 @@ class NewsTest(HouraiTeahouseTestCase):
         self.assert403(response)
 
     def test_translate_requires_authentication(self):
-        response = self.post('/news/translate/1')
+        response = self.put('/news/1/translate')
         self.assert401(response)
 
     def test_translate_requires_authorization(self):
-        response = self.post('/news/translate/1', session=self.session)
+        response = self.post('/news/1/translate', session=self.session)
         self.assert403(response)
 
     def test_comment_post_fails_on_missing_post(self):
-        response = self.post('/news/comment/post/1', session=self.session,
+        response = self.post('/news/1/comment', session=self.session,
                              data={'body': 'Hello World'})
         self.assert404(response)
 

@@ -2,7 +2,7 @@ import logging
 
 from datetime import datetime
 from flask_sqlalchemy_cache import FromCache
-from sqlalchemy import inspect
+from sqlalchemy import inspect, exc
 from sqlalchemy.orm.session import Session
 from houraiteahouse.storage import models
 from houraiteahouse.storage import storage_util as util
@@ -23,15 +23,26 @@ def new_user_session(user, remember_me):
 
 
 def get_user_session(session_uuid):
-    return models.UserSession.get(session_uuid=session_uuid)
+    return models.UserSession.query \
+        .filter_by(session_uuid=session_uuid) \
+        .options(FromCache(cache)) \
+        .first()
+
+
+def close_all_sessions(user_id):
+    models.UserSession.query \
+        .filter_by(user_id=user_id) \
+        .options(FromCache(cache)) \
+        .delete()
+    db.session.commit()
 
 
 def close_user_session(session_uuid):
-    user_session = get_user_session(session_uuid)
-    if not user_session:
-        return
-    user_session.valid_before = datetime.utcnow()
-    db.session.merge(user_session)
+    userSession = models.UserSession.query \
+        .filter_by(session_uuid=session_uuid) \
+        .options(FromCache(cache)) \
+        .first()
+    db.session.delete(userSession)
     db.session.commit()
 
 
@@ -90,5 +101,13 @@ def create_user(email, username, password):
 
 
 def update_password(user, password):
+    """
+        params:
+            user: A User object
+            password: the users' new password
+        return: boolean, whether the change was successful
+    """
     user.change_password(password)
+    # Changing passwords should the user out of all of their sessions
+    close_all_sessions(user.user_id)
     util.try_merge(user=user, logger=logger)

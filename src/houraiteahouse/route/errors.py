@@ -42,9 +42,9 @@ def install_error_handlers(app):
     def unknown_error(exception):
         logger.exception(exception)
         return generate_error_response(
-                500, 'An internal error has occured, '
-                'please try again later. If this error persists, '
-                'please contact us.')
+            500, 'An internal error has occured, '
+            'please try again later. If this error persists, '
+            'please contact us.')
 
 
 class InvalidRequestError(Exception):

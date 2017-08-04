@@ -10,10 +10,10 @@ from ..storage.models import db
 from . import request_util
 from werkzeug.exceptions import NotFound, BadRequest, Unauthorized
 
-auth = Blueprint('auth', __name__)
+user = Blueprint('user', __name__)
 
 
-@auth.route('/register', methods=['POST'])
+@user.route('', methods=['POST'])
 def register():
     json_data = request.json
 
@@ -26,7 +26,24 @@ def register():
     return request_util.generate_success_response('success', 'plain/text')
 
 
-@auth.route('/login', methods=['POST'])
+@user.route('', methods=['PUT'])
+@authenticate
+def change_password():
+    json_data = request.json
+
+    auth_bl.change_password(
+        json_data['username'],
+        json_data['oldPassword'],
+        json_data['newPassword']
+    )
+
+    return request_util.generate_success_response(
+                        'Update successful',
+                        'plain/text'
+                    )
+
+
+@user.route('/login', methods=['POST'])
 def login():
     json_data = request.json
     if 'remember_me' not in json_data:
@@ -46,7 +63,7 @@ def login():
     raise Unauthorized('Invalid username or password')
 
 
-@auth.route('/logout', methods=['POST'])
+@user.route('/logout', methods=['POST'])
 @authenticate
 def logout():
     json_data = request.json
@@ -59,7 +76,7 @@ def logout():
     )
 
 
-@auth.route('/status', methods=['GET'])
+@user.route('/status', methods=['GET'])
 def status():
     json_data = request.args
     if 'session_id' not in json_data:
@@ -85,21 +102,9 @@ def status():
     )
 
 
-@auth.route('/update', methods=['POST'])
-@authenticate
-def change_password():
-    json_data = request.json
-    auth_bl.change_password(json_data['username'], json_data['oldPassword'],
-                            json_data['newPassword'])
-    return request_util.generate_success_response(
-        'Update successful',
-        'plain/text'
-    )
-
-
 # Can only be used by True Administrators
 
-@auth.route('/permissions/<username>', methods=['GET'])
+@user.route('/<username>/permissions', methods=['GET'])
 @authorize('admin')
 def get_user_permissions(username):
     permissions = auth_storage.get_permissions_by_username(username)
@@ -115,7 +120,7 @@ def get_user_permissions(username):
     )
 
 
-@auth.route('/permissions/<username>', methods=['PUT'])
+@user.route('/<username>/permissions', methods=['POST', 'PUT'])
 @authorize('admin')
 def set_user_permissions(username):
     json_data = request.json

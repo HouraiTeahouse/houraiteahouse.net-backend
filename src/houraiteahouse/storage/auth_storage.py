@@ -87,9 +87,9 @@ def set_permissions_by_username(username, permissions, session_uuid):
     util.try_merge(permissions=permissionsObj)
 
 
-def create_user(email, username, password):
+def create_user(email, username, password, permissions=None):
     # TODO: registration email
-    permissions = models.UserPermissions()
+    permissions = permissions or models.UserPermissions()
     user = models.User(
         email=email,
         username=username,

@@ -3,7 +3,8 @@ from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
 from houraiteahouse.config import DevelopmentConfig
 from houraiteahouse.app import create_app
-from houraiteahouse.storage.models import db
+from houraiteahouse.storage import auth_storage
+from houraiteahouse.storage.models import db, UserPermissions
 
 # Flask migrate scripting for SQLAlchemy
 
@@ -32,7 +33,7 @@ def routes():
         options = {arg: '{%s}' % arg for arg in rule.arguments}
         methods = ','.join(rule.methods)
         url = url_for(rule.endpoint, **options)
-        line = urllib.unquote(
+        line = urllib.parse.unquote(
             '{:50s} {:20s} {}'.format(rule.endpoint, methods, url))
         output.append(line)
 
@@ -44,7 +45,10 @@ def routes():
 def create_admin():
     # Temporary for initialization - as part of this, connect to the DB &
     # create a real admin
-    db.session.add(User(email='ad@min', password='admin', admin=True))
+    permissions = UserPermissions()
+    permissions.admin = True
+
+    auth_storage.create_user("ad@min", "admin", "admin", permissions)
     db.session.commit()
 
 

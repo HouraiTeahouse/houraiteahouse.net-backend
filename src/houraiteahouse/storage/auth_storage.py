@@ -8,8 +8,24 @@ from houraiteahouse.storage import models
 from houraiteahouse.storage import storage_util as util
 from houraiteahouse.storage.models import db, cache
 from werkzeug.exceptions import Forbidden
+from flask_jwt import JWT
 
 logger = logging.getLogger(__name__)
+
+
+def authenticate_user(username, password):
+    user = get_user(username)
+    if user and user.check_password(password):
+        return user
+
+
+def identify_user(payload):
+    user_id = payload['identity']
+    return get_user_by_id(user_id)
+
+
+jwt = JWT(authentication_handler=authenticate_user,
+          identity_handler=identify_user)
 
 
 # TODO: Refactor to remove code duplication, add caching

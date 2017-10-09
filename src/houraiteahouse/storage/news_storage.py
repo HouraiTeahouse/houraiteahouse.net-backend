@@ -3,6 +3,7 @@ import logging
 import os
 from datetime import datetime
 from flask_sqlalchemy_cache import FromCache
+from flask_jwt import current_identity
 from houraiteahouse.storage import auth_storage as auth
 from houraiteahouse.storage import storage_util as util
 from houraiteahouse.storage import models
@@ -49,13 +50,10 @@ def tagged_news(tag, language=DEFAULT_LANGUAGE):
 
 # "postId" is a misnomer, it's actually the short title
 # (ie, [date]-shortened-title)
-def get_news(postId, session_id, language=DEFAULT_LANGUAGE):
+def get_news(postId, language=DEFAULT_LANGUAGE):
     news = models.NewsPost.get_or_die(post_short=postId)
-    caller = None
-    if session_id:
-        caller = auth.get_user_session(session_id).user
 
-    ret = news_to_dict(news, caller, language)
+    ret = news_to_dict(news, current_identity, language)
 
     # TODO(james7132): Make this configurable
     with open_news_file(postId, language=language) as news_file:
@@ -64,14 +62,13 @@ def get_news(postId, session_id, language=DEFAULT_LANGUAGE):
     return ret
 
 
-def post_news(title, body, tags, session_id, media=None,
+def post_news(title, body, tags, media=None,
               language=DEFAULT_LANGUAGE):
     lang = get_language(language)
 
     tagObjs = [get_tag(name) for name in tags]
 
-    author = auth.get_user_session(session_id).user
-    if not author:
+    if not current_identity:
         return None
 
     body = sanitize_body(body)
@@ -86,14 +83,13 @@ def post_news(title, body, tags, session_id, media=None,
     postTitle = models.NewsTitle(news, lang, title)
 
     util.try_add(news=news, logger=logger)
-    return get_news(shortTitle, session_id, language)
+    return get_news(shortTitle, language)
 
 
-def edit_news(post_id, title, body, session_id, media,
+def edit_news(post_id, title, body, media,
               language=DEFAULT_LANGUAGE):
     news = models.NewsPost.get_or_die(post_short=post_id)
-    caller = auth.get_user_session(session_id).user
-    if caller != news.author:
+    if current_identity != news.author:
         raise Forbidden
 
     body = sanitize_body(body)
@@ -105,7 +101,7 @@ def edit_news(post_id, title, body, session_id, media,
     news.media = media
     news.lastEdit = datetime.utcnow()
 
-    ret = news_to_dict(news, caller)
+    ret = news_to_dict(news, current_identity)
 
     util.try_merge(news=news, logger=logger)
     ret['body'] = body
@@ -145,10 +141,9 @@ def create_tag(name):
     return tag
 
 
-def post_comment(post_id, body, session_id):
+def post_comment(post_id, body):
     news = models.NewsPost.get_or_die(post_short=post_id)
-    author = auth.get_user_session(session_id).user
-    if not author:
+    if not current_identity:
         return None
     ret = {'body': body, 'author': author.username}
 
@@ -159,32 +154,30 @@ def post_comment(post_id, body, session_id):
     return ret
 
 
-def edit_comment(comment_id, body, session_id):
+def edit_comment(comment_id, body):
     comment = models.NewsComment.get_or_die(id=comment_id)
-    caller = auth.get_user_session(session_id).user
-    if caller != comment.author:
+    if current_identity != comment.author:
         raise Forbidden
 
     comment.body = sanitize_body(body)
     util.try_merge(comment=comment, logger=logger)
 
 
-def delete_comment(comment_id, session_id):
+def delete_comment(comment_id):
     comment = models.NewsComment.get_or_die(id=comment_id)
-    caller = auth.get_user_session(session_id).user
-    if caller != comment.get_author and not (
-            caller.get_permissions().admin or caller.get_permissions().master):
+    if current_identity != comment.get_author and not (
+            current_identity.get_permissions().admin or current_identity.get_permissions().master):
         raise Forbidden
 
     util.try_delete(comment=comment, logger=logger)
     return True
 
 
-def news_to_dict(news, caller=None, language=DEFAULT_LANGUAGE):
+def news_to_dict(news, language=DEFAULT_LANGUAGE):
     lang = get_language(language)
     newsDict = {
         'author': news.author.username,
-        'isAuthor': caller and caller == news.get_author(),
+        'isAuthor': current_identity == news.get_author(),
         'created': str(news.created),
         'post_id': news.post_short,
         'tags': [tag.name for tag in news.tags]
@@ -197,7 +190,7 @@ def news_to_dict(news, caller=None, language=DEFAULT_LANGUAGE):
         newsDict['media'] = news.media
 
     if news.comments:
-        newsDict['comments'] = [comment_to_dict(comment, caller)
+        newsDict['comments'] = [comment_to_dict(comment)
                                 for comment in news.comments]
 
     if news.lastEdit:
@@ -206,12 +199,12 @@ def news_to_dict(news, caller=None, language=DEFAULT_LANGUAGE):
     return newsDict
 
 
-def comment_to_dict(comment, caller=None):
+def comment_to_dict(comment):
     return {
         'id': comment.comment_id,
         'author': comment.get_author() .get_username(),
         'body': comment.body,
-        'isAuthor': caller and caller == comment.get_author()
+        'isAuthor': current_identity == comment.get_author()
     }
 
 

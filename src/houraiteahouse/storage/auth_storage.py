@@ -3,12 +3,11 @@ import logging
 from datetime import datetime
 from flask_sqlalchemy_cache import FromCache
 from sqlalchemy import inspect, exc
-from sqlalchemy.orm.session import Session
 from houraiteahouse.storage import models
 from houraiteahouse.storage import storage_util as util
 from houraiteahouse.storage.models import db, cache
 from werkzeug.exceptions import Forbidden
-from flask_jwt import JWT
+from flask_jwt import JWT, current_identity
 
 logger = logging.getLogger(__name__)
 
@@ -31,37 +30,6 @@ jwt = JWT(authentication_handler=authenticate_user,
 # TODO: Refactor to remove code duplication, add caching
 
 
-def new_user_session(user, remember_me):
-    user_session = models.UserSession(user, remember_me)
-    uuid = user_session.session_uuid
-    util.try_add(session=user_session, logger=logger)
-    return get_user_session(uuid)
-
-
-def get_user_session(session_uuid):
-    return models.UserSession.query \
-        .filter_by(session_uuid=session_uuid) \
-        .options(FromCache(cache)) \
-        .first()
-
-
-def close_all_sessions(user_id):
-    models.UserSession.query \
-        .filter_by(user_id=user_id) \
-        .options(FromCache(cache)) \
-        .delete()
-    db.session.commit()
-
-
-def close_user_session(session_uuid):
-    userSession = models.UserSession.query \
-        .filter_by(session_uuid=session_uuid) \
-        .options(FromCache(cache)) \
-        .first()
-    db.session.delete(userSession)
-    db.session.commit()
-
-
 def get_user(username):
     return models.User.get(username=username)
 
@@ -80,13 +48,13 @@ def get_permissions_by_username(username):
     return permissions
 
 
-def set_permissions_by_username(username, permissions, session_uuid):
-    callerPermissions = get_user_session(session_uuid).user.permissions
+def set_permissions_by_username(username, permissions):
+    ccaller_permissions = current_identity.permissions
 
     error = Forbidden('You do not have the permissions to do this.')
 
-    if not callerPermissions.master:
-        if not callerPermissions.admin:
+    if not ccaller_permissions.master:
+        if not ccaller_permissions.admin:
             # If you're not a master or admin you can't touch this.
             raise error
         if permissions['admin']:
@@ -124,6 +92,4 @@ def update_password(user, password):
         return: boolean, whether the change was successful
     """
     user.change_password(password)
-    # Changing passwords should the user out of all of their sessions
-    close_all_sessions(user.user_id)
     util.try_merge(user=user, logger=logger)

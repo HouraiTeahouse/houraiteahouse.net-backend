@@ -4,7 +4,7 @@ from houraiteahouse.route.errors import install_error_handlers
 
 
 blueprints = {
-    '/auth': user,
+    '/user': user,
     '/news': news,
 }
 

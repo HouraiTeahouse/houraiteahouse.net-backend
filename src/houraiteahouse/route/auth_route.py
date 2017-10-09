@@ -1,10 +1,11 @@
 import json
 import logging
 from flask import request, Blueprint
+from flask_jwt import jwt_required
 from sqlalchemy.exc import IntegrityError
 from ..common import bcrypt
 from ..bl import auth_bl
-from ..bl.auth_bl import authenticate, authorize
+from ..bl.auth_bl import authorize
 from ..storage import auth_storage, models
 from ..storage.models import db
 from . import request_util
@@ -34,7 +35,7 @@ def register():
 
 
 @user.route('', methods=['PUT'])
-@authenticate
+@jwt_required()
 def change_password():
     """
     Entry point for a logged in user changing their password.
@@ -47,7 +48,6 @@ def change_password():
     json_data = request.json
 
     auth_bl.change_password(
-        json_data['username'],
         json_data['oldPassword'],
         json_data['newPassword']
     )
@@ -58,53 +58,8 @@ def change_password():
                     )
 
 
-@user.route('/login', methods=['POST'])
-def login():
-    """
-    Entry point for user login
-    request data should contain username, password, and the remember_me flag
-    :return: Success response with session data upon successful login, Error
-      response otherwise
-    :rtype: flask.Response
-    """
-    json_data = request.json
-    if 'remember_me' not in json_data:
-        json_data['remember_me'] = False
-
-    sessionData = auth_bl.start_user_session(
-        json_data['username'],
-        json_data['password'],
-        json_data['remember_me']
-    )
-
-    if sessionData:
-        return request_util.generate_success_response(
-            json.dumps(sessionData),
-            'application/json'
-        )
-    raise Unauthorized('Invalid username or password')
-
-
-@user.route('/logout', methods=['POST'])
-@authenticate
-def logout():
-    """
-    Entry point for user logout
-    request data should contain the session_id to close
-    :return: Success response
-    :rtype: flask.Response
-    """
-    json_data = request.json
-    # Decorator has already confirmed login
-    auth_bl.close_user_session(json_data['session_id'])
-
-    return request_util.generate_success_response(
-        'Logout Successful',
-        'plain/text'
-    )
-
-
 @user.route('/status', methods=['GET'])
+@jwt_required()
 def status():
     """
     Entry point for checking status of current user session
@@ -114,22 +69,19 @@ def status():
     :rtype: flask.Response
     """
     json_data = request.args
-    if 'session_id' not in json_data:
-        response = {'status': False}
 
-    else:
-        response = auth_bl.authentication_check(json_data['session_id'])
+    response = auth_bl.authentication_check()
 
-        if 'permissions' in response:
-            permissions = response['permissions']
-            permissions.pop('permissions_id')
+    if 'permissions' in response:
+        permissions = response['permissions']
+        permissions.pop('permissions_id')
 
-            # Obscure/hide permissions the user doesn't have
-            filteredPerms = {}
-            for permission in permissions:
-                if permissions[permission]:
-                    filteredPerms[permission] = True
-            response['permissions'] = filteredPerms
+        # Obscure/hide permissions the user doesn't have
+        filteredPerms = {}
+        for permission in permissions:
+            if permissions[permission]:
+                filteredPerms[permission] = True
+        response['permissions'] = filteredPerms
 
     return request_util.generate_success_response(
         json.dumps(response),
@@ -181,7 +133,6 @@ def set_user_permissions(username):
     auth_storage.set_permissions_by_username(
         username,
         json_data['permissions'],
-        json_data['session_id']
     )
 
     return request_util.generate_success_response(

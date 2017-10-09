@@ -114,51 +114,6 @@ class User(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     def __repr__(self):
         return '<User {0}>'.format(self.username)
 
-# Session tracking
-
-
-class UserSession(db.Model, HouraiTeahouseModelMixin, BaseMixin):
-    __tablename__ = "sessions"
-
-    session_uuid = db.Column('session_uuid', db.String(36), nullable=False,
-                             unique=True)
-    valid_after = db.Column(db.DateTime, nullable=False)
-    valid_before = db.Column(db.DateTime, nullable=True)
-    user_id = db.Column('user_id', db.Integer, db.ForeignKey('htuser.id'),
-                        nullable=False)
-    user = db.relationship('User', backref=db.backref('session',
-                                                      lazy='dynamic'))
-
-    def __init__(self, user, remember_me=False):
-        self.user = user
-        self.session_uuid = str(uuid.uuid4())
-        self.valid_after = datetime.utcnow()  # Prevent time travel
-        if remember_me:
-            self.valid_before = None
-        else:
-            self.valid_before = datetime.utcnow() + timedelta(days=1)
-
-    def get_uuid(self):
-        return self.session_uuid
-
-    def get_user(self):
-        return self.user
-
-    @property
-    def expiration(self):
-        return None if self.valid_before is None else int(
-            time.mktime(self.valid_before.timetuple())) * 1000
-
-    @property
-    def is_valid(self):
-        now = datetime.utcnow()
-        if self.valid_before is not None and self.valid_before < now:
-            return False
-        return self.valid_after < now
-
-    def __repr__(self):
-        return '<UserSession {0}>'.format(self._session_uuid)
-
 # User authZ
 
 

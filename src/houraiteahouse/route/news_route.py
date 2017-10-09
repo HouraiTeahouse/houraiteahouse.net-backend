@@ -45,12 +45,7 @@ def get_news_wrapper(post_id):
     @require_language('args', 'fetching news post {0}'
                       .format(post_id))
     def get_news(post_id):
-        callerSess = None
-        if 'session_id' in request.args:
-            callerSess = request.args['session_id']
-
-        news = news_storage.get_news(post_id, callerSess,
-                                     request.args['language'])
+        news = news_storage.get_news(post_id, request.args['language'])
 
         return request_util.generate_success_response(
             json.dumps(news),
@@ -69,7 +64,6 @@ def create_news():
         json_data['title'],
         json_data['body'],
         json_data['tags'],
-        json_data['session_id'],
         media
     )
 
@@ -88,7 +82,6 @@ def edit_news(post_id):
         post_id,
         request.json['title'],
         request.json['body'],
-        request.json['session_id'],
         media
     )
 
@@ -125,7 +118,6 @@ def create_comment(post_id):
     comment = news_storage.post_comment(
         post_id,
         request.json['body'],
-        request.json['session_id']
     )
 
     if comment is None:
@@ -151,7 +143,6 @@ def edit_comment_wrapper(post_id, comment_id):
             comment = news_storage.edit_comment(
                 comment_id,
                 request.data['body'],
-                request.data['session_id']
             )
 
             if comment is None:
@@ -179,10 +170,7 @@ def edit_comment_wrapper(post_id, comment_id):
 @news.route('/<post_id>/comment/<comment_id>', methods=['DELETE'])
 @authorize('comment')
 def delete_comment(comment_id):
-    success = news_storage.delete_comment(
-        comment_id,
-        request.json['session_id']
-    )
+    success = news_storage.delete_comment(comment_id)
 
     return request_util.generate_success_response(
         'Comment deleted',

@@ -3,12 +3,11 @@ import logging
 from datetime import datetime
 from flask_sqlalchemy_cache import FromCache
 from sqlalchemy import inspect, exc
-from sqlalchemy.orm.session import Session
 from houraiteahouse.storage import models
 from houraiteahouse.storage import storage_util as util
 from houraiteahouse.storage.models import db, cache
 from werkzeug.exceptions import Forbidden
-from flask_jwt import JWT
+from flask_jwt import JWT, current_identity
 
 logger = logging.getLogger(__name__)
 
@@ -29,63 +28,6 @@ jwt = JWT(authentication_handler=authenticate_user,
 
 
 # TODO: Refactor to remove code duplication, add caching
-
-
-def new_user_session(user, remember_me):
-    """
-    Opens a new session for the given user.
-    :param user: User model the session has been requested for
-    :type user: models.UserSession
-    :param remember_me: Whether to make this a long-lasting session
-    :type remember_me: Boolean
-    :return: The new session
-    :rtype: models.UserSession
-    """
-    user_session = models.UserSession(user, remember_me)
-    uuid = user_session.session_uuid
-    util.try_add(session=user_session, logger=logger)
-    return get_user_session(uuid)
-
-
-def get_user_session(session_uuid):
-    """
-    Fetches the session associated with the given session ID
-    :param session_uuid: The session ID to query
-    :type session_uuid: basestring
-    :return: Session object associated with the ID if present
-    :rtype: models.UserSession
-    """
-    return models.UserSession.query \
-        .filter_by(session_uuid=session_uuid) \
-        .options(FromCache(cache)) \
-        .first()
-
-
-def close_all_sessions(user_id):
-    """
-    Closes all sessions associated with a given user
-    :param user_id: ID of the user to close all sessions for
-    :type user_id: int
-    """
-    models.UserSession.query \
-        .filter_by(user_id=user_id) \
-        .options(FromCache(cache)) \
-        .delete()
-    db.session.commit()
-
-
-def close_user_session(session_uuid):
-    """
-    Closes the session associated with the given session ID
-    :param session_uuid: Session ID to close
-    :type session_uuid: basestring
-    """
-    userSession = models.UserSession.query \
-        .filter_by(session_uuid=session_uuid) \
-        .options(FromCache(cache)) \
-        .first()
-    db.session.delete(userSession)
-    db.session.commit()
 
 
 def get_user(username):
@@ -123,7 +65,7 @@ def get_permissions_by_username(username):
     return permissions
 
 
-def set_permissions_by_username(username, permissions, session_uuid):
+def set_permissions_by_username(username, permissions):
     """
     Attempts to update the given permissions associated with the given
       username to the provided new permissions.
@@ -131,18 +73,15 @@ def set_permissions_by_username(username, permissions, session_uuid):
     :type username: basestring
     :param permissions: New permissions to set
     :type permissions: dict
-    :param session_uuid: Session ID of the caller.  Used as part of authZ
-      check.
-    :type session_uuid: basestring
     :return: Whether the permissions were updated successfully
     :rtype: Boolean
     """
-    callerPermissions = get_user_session(session_uuid).user.permissions
+    caller_permissions = current_identity.permissions
 
     error = Forbidden('You do not have the permissions to do this.')
 
-    if not callerPermissions.master:
-        if not callerPermissions.admin:
+    if not caller_permissions.master:
+        if not caller_permissions.admin:
             # If you're not a master or admin you can't touch this.
             raise error
         if permissions['admin']:
@@ -194,6 +133,4 @@ def update_password(user, password):
     :rtype: Boolean
     """
     user.change_password(password)
-    # Changing passwords should the user out of all of their sessions
-    close_all_sessions(user.user_id)
     util.try_merge(user=user, logger=logger)

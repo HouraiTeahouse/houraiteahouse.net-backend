@@ -79,7 +79,7 @@ class Language(db.Model, HouraiTeahouseModelMixin, BaseMixin):
 
 
 class User(db.Model, HouraiTeahouseModelMixin, BaseMixin):
-    __tablename__ = "user"
+    __tablename__ = "htuser"
 
     username = db.Column('username', db.String(64), nullable=False,
                          unique=True)
@@ -90,7 +90,7 @@ class User(db.Model, HouraiTeahouseModelMixin, BaseMixin):
         'permissions.id'), nullable=False)
     permissions = db.relationship(
         'UserPermissions', backref=db.backref(
-            'user', lazy='dynamic'))
+            'htuser', lazy='dynamic'))
     # TODO: user registration confirmation
 
     def __init__(self, email, username, password, permissions):
@@ -124,7 +124,7 @@ class UserSession(db.Model, HouraiTeahouseModelMixin, BaseMixin):
                              unique=True)
     valid_after = db.Column(db.DateTime, nullable=False)
     valid_before = db.Column(db.DateTime, nullable=True)
-    user_id = db.Column('user_id', db.Integer, db.ForeignKey('user.id'),
+    user_id = db.Column('user_id', db.Integer, db.ForeignKey('htuser.id'),
                         nullable=False)
     user = db.relationship('User', backref=db.backref('session',
                                                       lazy='dynamic'))
@@ -224,7 +224,7 @@ class NewsPost(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     media = db.Column(db.String(1024))
     author_id = db.Column(
         db.Integer,
-        db.ForeignKey('user.id'),
+        db.ForeignKey('htuser.id'),
         nullable=False)
     created = db.Column(db.DateTime, nullable=False)
     author = db.relationship('User',
@@ -303,7 +303,7 @@ class NewsComment(db.Model, HouraiTeahouseModelMixin, BaseMixin):
     body = db.Column(db.String(10000), nullable=False)
     author_id = db.Column(
         db.Integer,
-        db.ForeignKey('user.id'),
+        db.ForeignKey('htuser.id'),
         nullable=False)
     author = db.relationship('User', backref=db.backref('newscomment',
                                                         lazy='dynamic'))

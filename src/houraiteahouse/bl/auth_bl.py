@@ -11,6 +11,17 @@ from werkzeug.exceptions import Unauthorized, Forbidden, InternalServerError, \
 
 
 def start_user_session(username, password, remember_me):
+    """
+    Verifies the user has provided the correct password and initiates a new session
+    :param username: Username attempting login
+    :type username: basestring
+    :param password: User-provided password to validate for authN
+    :type password: basestring
+    :param remember_me: Whether to initiate a long-lasting session
+    :type remember_me: Boolean
+    :return: Either a new user session
+    :rtype: houraiteahouse.storage.models.UserSession
+    """
     error = Unauthorized('Invalid username or password.')
     if username is None or password is None:
         raise error
@@ -36,6 +47,13 @@ def start_user_session(username, password, remember_me):
 
 
 def get_user_for_session(session_id):
+    """
+    Fetches the user data associated with the given session ID
+    :param session_id: Session ID associated with the desired user
+    :type session_id: basestring
+    :return: User object associated with the given session
+    :rtype: houraiteahouse.storage.models.User
+    """
     userSession = auth_storage.get_user_session(session_id)
     if userSession is None or not userSession.is_valid():
         raise Unauthorized('User is not logged in!')
@@ -43,10 +61,25 @@ def get_user_for_session(session_id):
 
 
 def close_user_session(session_id):
+    """
+    Closes the session associated with the given session ID
+    :param session_id: The session ID to close
+    :type session_id: basestring
+    """
     auth_storage.close_user_session(session_id)
 
 
 def change_password(username, old_password, new_password):
+    """
+    Changes the password with the given user to the new password.
+    The old password will be validated before any change is made.
+    :param username: User who has requested password update
+    :type username: basestring
+    :param old_password: The provided old password to validate for authN
+    :type old_password: basestring
+    :param new_password: The provided new password to update to
+    :type new_password: basestring
+    """
     user = auth_storage.get_user(username)
     if not authenticate_user(user, old_password):
         raise Unauthorized()
@@ -60,10 +93,24 @@ def change_password(username, old_password, new_password):
 # Primary authN logic
 
 def authenticate_user(user, password):
+    """
+    Validates that the given password is correct for the given user
+    :param user: The User model object attempting authN
+    :type user: houraiteahouse.storage.models.User
+    :param password: The password being presented in the authN challenge
+    :type password: basestring
+    """
     return user and password and user.check_password(password)
 
 
 def authentication_check(session_id):
+    """
+    Validates that the given session is valid and returns session data if it is
+    :param session_id: The session ID to check for validity
+    :type session_id: basestring
+    :return: Blob containing session status and, if relevant, permissions & expiration
+    :rtype: dict
+    """
     if session_id is None:
         return {'status': False}
     userSession = auth_storage.get_user_session(session_id)
@@ -77,12 +124,26 @@ def authentication_check(session_id):
     ret['permissions'].pop('_sa_instance_state')
     return ret
 
-# Decorator to require authentication for requests
-
 
 def authenticate(func):
+    """
+    AuthN decorator.  Applying this decorator to a method will require any request to
+    successfully pass an authentication challenge or return an error response.
+    :param func: Method to decorate
+    :type func: callable
+    :return: Wrapped method
+    :rtype: callable
+    """
     @wraps(func)
     def authenticate_and_call(*args, **kwargs):
+        """
+        Checks if the request passes an authN challenge and invokes func on success
+        :param args: Arguments to give to func
+        :type args: list
+        :param kwargs: Keyword arguments to give to func
+        :type kwargs: dict
+        :return: Results of func call if authN challenge passes
+        """
         flag = False
         # reqdat = request.data or request.args
         can_auth = request.json and 'session_id' in request.json
@@ -95,9 +156,17 @@ def authenticate(func):
     return authenticate_and_call
 
 
-# Primary authZ logic.  Includes authN check
-
 def authorization_check(action_type, session_id):
+    """
+    Authorization check.  Validates that the permissions for the given session include
+    the requested action type.
+    :param action_type: The permission type to validate
+    :type action_type: basestring
+    :param session_id: The ID of the session attempting to perform the requested action
+    :type session_id: basestring
+    :return: Result of (implicit) authN and (explicit) authZ check
+    :rtype: Boolean
+    """
     if session_id is None or action_type is None:
         return False
     userSession = auth_storage.get_user_session(session_id)
@@ -110,10 +179,34 @@ def authorization_check(action_type, session_id):
 
 # Decorator to require authorization for requests
 def authorize(action_type):
+    """
+    AuthZ decorator.  Applying this decorator to a method will require any calls to it
+    pass an authorization check for the specified action type.
+    This includes an authN check.
+    :param action_type: The permission type to validate
+    :type action_type: basestring
+    :return: Function wrapper
+    :rtype: callable
+    """
     def authz_wrapper(func):
+        """
+        Inner decorator logic.
+        :param func: Method to wrap
+        :type func: callable
+        :return: Wrapped method
+        :rtype: callable
+        """
         @wraps(func)
         @authenticate
         def authorize_and_call(*args, **kwargs):
+            """
+            Checks if the request passes an authZ challenge and invokes func on success
+            :param args: Arguments to give to func
+            :type args: list
+            :param kwargs: Keyword arguments to give to func
+            :type kwargs: dict
+            :return: Results of func call if authN challenge passes
+            """
             reqdat = request.json or request.args
             # The authenticate decorator has already guaranteed the request
             # data is present

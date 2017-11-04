@@ -18,7 +18,8 @@ def register():
     """
     Entry point for registering a new user
     request data should contain an email address, username, and password
-    :return: Success response if registration succeeds, Error response otherwise
+    :return: Success response if registration succeeds, Error response
+      otherwise
     :rtype: flask.Response
     """
     json_data = request.json
@@ -39,7 +40,8 @@ def change_password():
     Entry point for a logged in user changing their password.
     This is not the entry point for a password reset.
     request data should contain username and both old & new password
-    :return: Success response on successful password change, Error response otherwise
+    :return: Success response on successful password change, Error response
+      otherwise
     :rtype: flask.Response
     """
     json_data = request.json
@@ -60,8 +62,9 @@ def change_password():
 def login():
     """
     Entry point for user login
-    request data should contain username, password, and the remember_me flag 
-    :return: Success response with session data upon successful login, Error response otherwise
+    request data should contain username, password, and the remember_me flag
+    :return: Success response with session data upon successful login, Error
+      response otherwise
     :rtype: flask.Response
     """
     json_data = request.json
@@ -106,7 +109,8 @@ def status():
     """
     Entry point for checking status of current user session
     request data should contain the session_id we want the status of
-    :return: Success response containing permissions blob if session is valid, else False
+    :return: Success response containing permissions blob if session is valid,
+      else False
     :rtype: flask.Response
     """
     json_data = request.args
@@ -140,10 +144,11 @@ def status():
 def get_user_permissions(username):
     """
     Entry point for fetching permissions associated to a given user
-    This route requires admin privileges to invoke 
+    This route requires admin privileges to invoke
     :param username: User whose permissions will be fetched
     :type username: basestring
-    :return: Success response containing username & permissions on successful authZ & lookup, Error response otherwise
+    :return: Success response containing username & permissions on successful
+      authZ & lookup, Error response otherwise
     :rtype: flask.Response
     """
     permissions = auth_storage.get_permissions_by_username(username)
@@ -167,7 +172,8 @@ def set_user_permissions(username):
     request data should contain the new permissions to set
     :param username: User whose permissions will be updated
     :type username: basestring
-    :return: Success response in raw text encoding on successful authZ & update, Error response otherwise
+    :return: Success response in raw text encoding on successful authZ &
+      update, Error response otherwise
     :rtype: flask.Response
     """
     json_data = request.json

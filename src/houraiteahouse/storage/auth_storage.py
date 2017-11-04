@@ -109,12 +109,14 @@ def get_permissions_by_username(username):
 
 def set_permissions_by_username(username, permissions, session_uuid):
     """
-    Attempts to update the given permissions associated with the given username to the provided new permissions.
+    Attempts to update the given permissions associated with the given
+      username to the provided new permissions.
     :param username: User whose permissions will be updated
     :type username: basestring
     :param permissions: New permissions to set
     :type permissions: dict
-    :param session_uuid: Session ID of the caller.  Used as part of authZ check.
+    :param session_uuid: Session ID of the caller.  Used as part of authZ
+      check.
     :type session_uuid: basestring
     :return: Whether the permissions were updated successfully
     :rtype: Boolean

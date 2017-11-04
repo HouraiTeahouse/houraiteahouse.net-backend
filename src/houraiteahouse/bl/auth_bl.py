@@ -12,7 +12,8 @@ from werkzeug.exceptions import Unauthorized, Forbidden, InternalServerError, \
 
 def start_user_session(username, password, remember_me):
     """
-    Verifies the user has provided the correct password and initiates a new session
+    Verifies the user has provided the correct password and initiates a new
+      session
     :param username: Username attempting login
     :type username: basestring
     :param password: User-provided password to validate for authN
@@ -108,7 +109,8 @@ def authentication_check(session_id):
     Validates that the given session is valid and returns session data if it is
     :param session_id: The session ID to check for validity
     :type session_id: basestring
-    :return: Blob containing session status and, if relevant, permissions & expiration
+    :return: Blob containing session status and, if relevant, permissions &
+      expiration
     :rtype: dict
     """
     if session_id is None:
@@ -127,8 +129,9 @@ def authentication_check(session_id):
 
 def authenticate(func):
     """
-    AuthN decorator.  Applying this decorator to a method will require any request to
-    successfully pass an authentication challenge or return an error response.
+    AuthN decorator.  Applying this decorator to a method will require any
+      request to successfully pass an authentication challenge or return an
+      error response.
     :param func: Method to decorate
     :type func: callable
     :return: Wrapped method
@@ -137,7 +140,8 @@ def authenticate(func):
     @wraps(func)
     def authenticate_and_call(*args, **kwargs):
         """
-        Checks if the request passes an authN challenge and invokes func on success
+        Checks if the request passes an authN challenge and invokes func
+          on success
         :param args: Arguments to give to func
         :type args: list
         :param kwargs: Keyword arguments to give to func
@@ -158,11 +162,12 @@ def authenticate(func):
 
 def authorization_check(action_type, session_id):
     """
-    Authorization check.  Validates that the permissions for the given session include
-    the requested action type.
+    Authorization check.  Validates that the permissions for the given session
+      include the requested action type.
     :param action_type: The permission type to validate
     :type action_type: basestring
-    :param session_id: The ID of the session attempting to perform the requested action
+    :param session_id: The ID of the session attempting to perform the
+      requested action
     :type session_id: basestring
     :return: Result of (implicit) authN and (explicit) authZ check
     :rtype: Boolean
@@ -180,9 +185,9 @@ def authorization_check(action_type, session_id):
 # Decorator to require authorization for requests
 def authorize(action_type):
     """
-    AuthZ decorator.  Applying this decorator to a method will require any calls to it
-    pass an authorization check for the specified action type.
-    This includes an authN check.
+    AuthZ decorator.  Applying this decorator to a method will require any
+      calls to it pass an authorization check for the specified action type.
+      This includes an authN check.
     :param action_type: The permission type to validate
     :type action_type: basestring
     :return: Function wrapper
@@ -200,7 +205,8 @@ def authorize(action_type):
         @authenticate
         def authorize_and_call(*args, **kwargs):
             """
-            Checks if the request passes an authZ challenge and invokes func on success
+            Checks if the request passes an authZ challenge and invokes func
+              on success
             :param args: Arguments to give to func
             :type args: list
             :param kwargs: Keyword arguments to give to func

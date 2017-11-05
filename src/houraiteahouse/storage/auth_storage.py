@@ -1,13 +1,14 @@
 import logging
 
 from datetime import datetime
+from flask import jsonify
+from flask_jwt import JWT, current_identity
 from flask_sqlalchemy_cache import FromCache
-from sqlalchemy import inspect, exc
 from houraiteahouse.storage import models
 from houraiteahouse.storage import storage_util as util
 from houraiteahouse.storage.models import db, cache
+from sqlalchemy import inspect, exc
 from werkzeug.exceptions import Forbidden
-from flask_jwt import JWT, current_identity
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +24,13 @@ def identify_user(payload):
     return get_user_by_id(user_id)
 
 
+def handle_auth_response(access_token, identity):
+    return jsonify({'access_token': access_token.decode('utf-8'), 'email': identity.email})
+
+
 jwt = JWT(authentication_handler=authenticate_user,
           identity_handler=identify_user)
+jwt.auth_response_handler(handle_auth_response)
 
 
 # TODO: Refactor to remove code duplication, add caching

@@ -32,6 +32,7 @@ def routes():
         options = {arg: '{%s}' % arg for arg in rule.arguments}
         methods = ','.join(rule.methods)
         url = url_for(rule.endpoint, **options)
+        # Note: for Python 3.6+, switch this to urllib.parse.unquote
         line = urllib.unquote(
             '{:50s} {:20s} {}'.format(rule.endpoint, methods, url))
         output.append(line)
